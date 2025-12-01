@@ -4,7 +4,8 @@ from datetime import datetime,timedelta
 import os
 import json
 import urllib.parse
-from PIL import Image # Library baru untuk memproses gambar
+from PIL import Image
+import io # Library baru untuk memproses gambar
 
 # --- 1. SETTING HALAMAN ---
 st.set_page_config(page_title="Sistem SDN 01 MARISA", page_icon="🏫", layout="wide")
@@ -236,33 +237,88 @@ if menu == "🖥️ Absensi (Scan)":
                 df_a.to_csv(FILE_ABSEN, index=False)
                 st.success(f"Tersimpan: {nm} - {ket}")
 
-# B. MENU LAPORAN
+# B. MENU LAPORAN (UPDATE DENGAN DOWNLOAD EXCEL)
 elif menu == "📊 Laporan & Persentase":
-    st.title("Laporan Kehadiran")
-    tgl = st.date_input("Pilih Tanggal:", datetime.now())
+    st.title("📊 Laporan & Download Data")
+    
+    # Pilih Tanggal
+    col_tgl, col_space = st.columns([1, 2])
+    with col_tgl:
+        tgl = st.date_input("Pilih Tanggal Laporan:", datetime.now())
+    
+    # Load Data
     df_a = pd.read_csv(FILE_ABSEN)
     df_s = pd.read_csv(FILE_SISWA)
     
+    # Filter Data Harian
     data_harian = df_a[df_a['Tanggal'] == tgl.strftime("%Y-%m-%d")]
     
+    # --- LOGIKA MENGHITUNG PERSENTASE ---
     if not df_s.empty:
+        # Hitung total siswa per kelas
         total_siswa = df_s.groupby('Kelas').size().reset_index(name='Total_Siswa')
+        
+        # Jika ada data absen hari ini
         if not data_harian.empty:
+            # Pivot table untuk menghitung jumlah Hadir/Sakit/Izin/Alpa per kelas
             rekap = data_harian.groupby(['Kelas', 'Keterangan']).size().unstack(fill_value=0).reset_index()
+            
+            # Pastikan kolom keterangan lengkap meski nilainya 0
             for k in ['Hadir', 'Sakit', 'Izin', 'Alpa']:
                 if k not in rekap.columns: rekap[k] = 0
             
+            # Gabungkan dengan total siswa
             final = pd.merge(total_siswa, rekap, on='Kelas', how='left').fillna(0)
-            final['% Hadir'] = (final['Hadir'] / final['Total_Siswa'] * 100).round(1).astype(str) + "%"
             
-            cols = ['Total_Siswa', 'Hadir', 'Sakit', 'Izin', 'Alpa']
-            final[cols] = final[cols].astype(int)
+            # Hitung Persentase Kehadiran (Hadir / Total * 100)
+            final['Persentase_Hadir'] = (final['Hadir'] / final['Total_Siswa'] * 100).round(1)
+            final['Ket_Persen'] = final['Persentase_Hadir'].astype(str) + "%"
             
-            st.dataframe(final, use_container_width=True, hide_index=True)
+            # Rapikan tipe data agar tidak ada koma desimal pada jumlah orang
+            cols_int = ['Total_Siswa', 'Hadir', 'Sakit', 'Izin', 'Alpa']
+            final[cols_int] = final[cols_int].astype(int)
+            
+            # TAMPILKAN TABEL DI LAYAR
+            st.markdown("### 1. Rekapitulasi Per Kelas")
+            st.dataframe(final[['Kelas', 'Total_Siswa', 'Hadir', 'Sakit', 'Izin', 'Alpa', 'Ket_Persen']], 
+                         use_container_width=True, hide_index=True)
+            
+            st.markdown("### 2. Detail Siswa Absen Hari Ini")
+            st.dataframe(data_harian[['Jam', 'Nama', 'Kelas', 'Keterangan']], use_container_width=True, hide_index=True)
+            
+            # --- FITUR DOWNLOAD EXCEL ---
+            st.divider()
+            st.subheader("📥 Download Laporan Excel")
+            
+            # Buat file Excel di Memori (Buffer)
+            buffer = io.BytesIO()
+            with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+                # Sheet 1: Rekap Persentase
+                final.to_excel(writer, sheet_name='Rekap_Persentase', index=False)
+                
+                # Sheet 2: Detail Data Mentah Hari Ini
+                data_harian.to_excel(writer, sheet_name='Detail_Absensi', index=False)
+                
+                # Sheet 3: Master Data Siswa (Opsional, biar lengkap)
+                df_s.to_excel(writer, sheet_name='Data_Siswa_Master', index=False)
+                
+            # Tombol Download
+            filename_excel = f"Laporan_Absensi_{tgl.strftime('%d-%m-%Y')}.xlsx"
+            
+            st.download_button(
+                label="⬇️ KLIK UNTUK DOWNLOAD REKAP (.xlsx)",
+                data=buffer.getvalue(),
+                file_name=filename_excel,
+                mime="application/vnd.ms-excel",
+                type="primary",
+                use_container_width=True
+            )
+            
         else:
-            st.info("Belum ada data absensi hari ini.")
+            st.info(f"Belum ada data absensi pada tanggal {tgl.strftime('%d-%m-%Y')}.")
+            st.dataframe(total_siswa, use_container_width=True) # Tampilkan kelas meski absen kosong
     else:
-        st.warning("Data Master Siswa Kosong.")
+        st.warning("Data Master Siswa Kosong. Silakan input data siswa terlebih dahulu di menu Data Master.")
 
 # C. DATA MASTER
 elif menu == "📂 Data Master":
@@ -405,5 +461,6 @@ elif menu == "⚙️ Pengaturan":
                 except Exception as e:
 
                     st.error(f"Gagal simpan logo: {e}")
+
 
 
