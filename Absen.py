@@ -143,7 +143,7 @@ st.markdown("""
 # A. MENU SCAN ABSENSI
 if menu == "🖥️ Absensi (Scan)":
    # Tambah 8 jam dari waktu server (UTC) ke WITA
-now = datetime.now() + timedelta(hours=8)
+    now = datetime.now() + timedelta(hours=8)
     c1, c2 = st.columns([3,1])
     c1.title("Scan Absensi SDN 01 MARISA")
     c1.markdown(f"#### 📆 {now.strftime('%A, %d %B %Y')}")
@@ -386,3 +386,4 @@ elif menu == "⚙️ Pengaturan":
                 except Exception as e:
 
                     st.error(f"Gagal simpan logo: {e}")
+
