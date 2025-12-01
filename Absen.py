@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime
+from datetime import datetime,timedelta
 import os
 import json
 import urllib.parse
@@ -12,18 +12,21 @@ st.set_page_config(page_title="Sistem SDN 01 MARISA", page_icon="🏫", layout="
 # --- 2. CSS CUSTOM ---
 st.markdown("""
     <style>
+    .stApp { background-color: #f0f2f6; }
     .footer {
         position: fixed; left: 0; bottom: 0; width: 100%;
-        background-color: #000; color: #fff;
+        background-color: #2c3e50; color: #white;
         text-align: center; padding: 10px; z-index: 999;
     }
     div[role="radiogroup"] {
-        background-color: #ffeb3b; padding: 15px;
-        border-radius: 10px; border: 2px solid #fbc02d;
-        color: black; font-weight: bold;
+        background-color: #ffffff; padding: 15px;
+        border-radius: 10px; border-left: 6px solid #2980b9;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        color: #2c3e50; font-weight: bold;
     }
     .stTextInput input {
-        font-size: 20px; padding: 10px; border: 2px solid #000;
+        font-size: 24px; padding: 10px; text-align: center;
+        border: 2px solid #2980b9; border-radius: 10px;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -86,7 +89,7 @@ def login_screen():
             u = st.text_input("Username")
             p = st.text_input("Password", type="password")
             if st.button("MASUK", type="primary", use_container_width=True):
-                if u == "admin" and p == "admin":
+                if u == "admin" and p == "4050715":
                     st.session_state['logged_in'] = True
                     st.rerun()
                 else:
@@ -139,7 +142,8 @@ st.markdown("""
 
 # A. MENU SCAN ABSENSI
 if menu == "🖥️ Absensi (Scan)":
-    now = datetime.now()
+   # Tambah 8 jam dari waktu server (UTC) ke WITA
+now = datetime.now() + timedelta(hours=8)
     c1, c2 = st.columns([3,1])
     c1.title("Scan Absensi SDN 01 MARISA")
     c1.markdown(f"#### 📆 {now.strftime('%A, %d %B %Y')}")
@@ -380,4 +384,5 @@ elif menu == "⚙️ Pengaturan":
                     st.success("Logo berhasil diganti!")
                     st.rerun()
                 except Exception as e:
+
                     st.error(f"Gagal simpan logo: {e}")
