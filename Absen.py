@@ -9,28 +9,47 @@ from PIL import Image # Library baru untuk memproses gambar
 # --- 1. SETTING HALAMAN ---
 st.set_page_config(page_title="Sistem SDN 01 MARISA", page_icon="🏫", layout="wide")
 
-# --- 2. CSS CUSTOM ---
+# --- 2. CSS CUSTOM (FIX TULISAN HITAM JELAS) ---
 st.markdown("""
     <style>
-    .stApp { background-color: #f0f2f6; }
+    /* 1. MEMAKSA SEMUA TULISAN JADI HITAM/GELAP */
+    .stApp, p, h1, h2, h3, h4, label, .stMarkdown {
+        color: #000000 !important; /* Warna Hitam Pekat */
+        text-shadow: none !important;
+    }
+    
+    /* 2. Mengatur Latar Belakang Aplikasi jadi Abu-abu Muda (Biar mata nyaman) */
+    .stApp {
+        background-color: #f0f2f6;
+    }
+
+    /* 3. Footer (Bagian Bawah) Tetap Hitam Tulisan Putih */
     .footer {
         position: fixed; left: 0; bottom: 0; width: 100%;
-        background-color: #2c3e50; color: #white;
+        background-color: #000000 !important; 
+        color: #ffffff !important;
         text-align: center; padding: 10px; z-index: 999;
     }
-    div[role="radiogroup"] {
-        background-color: #ffffff; padding: 15px;
-        border-radius: 10px; border-left: 6px solid #2980b9;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        color: #2c3e50; font-weight: bold;
-    }
+    
+    /* 4. Kotak Input NISN (Biar JELAS) */
     .stTextInput input {
-        font-size: 24px; padding: 10px; text-align: center;
-        border: 2px solid #2980b9; border-radius: 10px;
+        background-color: #ffffff !important; /* Latar Input Putih */
+        color: #000000 !important; /* Tulisan Input HITAM */
+        border: 2px solid #000000 !important; /* Garis Pinggir Hitam */
+        font-weight: bold;
+    }
+
+    /* 5. Pilihan Radio Button (Datang/Pulang) */
+    div[role="radiogroup"] {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+        border: 1px solid #000000;
+    }
+    .stRadio label {
+        color: #000000 !important; /* Tulisan Pilihan Hitam */
     }
     </style>
 """, unsafe_allow_html=True)
-
 # --- 3. SETUP DATABASE & FOLDER ---
 FILE_ABSEN = 'database_absen.csv'
 FILE_SISWA = 'master_siswa.csv' 
@@ -386,4 +405,5 @@ elif menu == "⚙️ Pengaturan":
                 except Exception as e:
 
                     st.error(f"Gagal simpan logo: {e}")
+
 
