@@ -109,7 +109,7 @@ def login_screen():
             u = st.text_input("Username")
             p = st.text_input("Password", type="password")
             if st.button("MASUK", type="primary", use_container_width=True):
-                if u == "admin" and p == "4050715":
+                if u == "admin" and p == "40500714":
                     st.session_state['logged_in'] = True
                     st.rerun()
                 else:
@@ -461,6 +461,7 @@ elif menu == "⚙️ Pengaturan":
                 except Exception as e:
 
                     st.error(f"Gagal simpan logo: {e}")
+
 
 
 
