@@ -3,3 +3,4 @@ pandas
 xlsxwriter
 openpyxl
 pillow
+st-gsheets-connection
