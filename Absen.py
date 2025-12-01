@@ -5,7 +5,7 @@ import os
 import json
 import urllib.parse
 from PIL import Image
-import io # Library baru untuk memproses gambar
+import io #---TAMBAHAN PENTING UNTUK DWONLOAD
 
 # --- 1. SETTING HALAMAN ---
 st.set_page_config(page_title="Sistem SDN 01 MARISA", page_icon="🏫", layout="wide")
@@ -461,6 +461,7 @@ elif menu == "⚙️ Pengaturan":
                 except Exception as e:
 
                     st.error(f"Gagal simpan logo: {e}")
+
 
 
 
