@@ -1,12 +1,44 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime,timedelta
+from datetime import datetime, timedelta
 import os
 import json
 import urllib.parse
 from PIL import Image
-import io #---TAMBAHAN PENTING UNTUK DWONLOAD
+import io
+import cv2  # Baru
+import av   # Baru
+import numpy as np # Baru (penting untuk array gambar)
+from pyzbar.pyzbar import decode # Baru
+from streamlit_webrtc import webrtc_streamer, WebRtcMode # Baru
 
+# --- FUNGSI KAMERA (Taruh ini sebelum logika utama aplikasi) ---
+def video_frame_callback(frame):
+    img = frame.to_ndarray(format="bgr24")
+
+    # Decode barcode/QR code
+    decoded_objects = decode(img)
+
+    for obj in decoded_objects:
+        data = obj.data.decode("utf-8")
+        
+        # Gambar kotak hijau (Visual saja)
+        points = obj.polygon
+        if len(points) == 4:
+            pts = points
+        else:
+            pts = cv2.convexHull(np.array([point for point in points], dtype=np.float32))
+        n = len(pts)
+        for j in range(0, n):
+            cv2.line(img, pts[j], pts[(j + 1) % n], (0, 255, 0), 3)
+
+        cv2.putText(img, data, (pts[0].x, pts[0].y - 10),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+        
+        # Print ke terminal server (untuk debugging)
+        print(f"TERDETEKSI: {data}")
+
+    return av.VideoFrame.from_ndarray(img, format="bgr24"
 # --- 1. SETTING HALAMAN ---
 st.set_page_config(page_title="Sistem SDN 01 MARISA", page_icon="🏫", layout="wide")
 
@@ -461,6 +493,7 @@ elif menu == "⚙️ Pengaturan":
                 except Exception as e:
 
                     st.error(f"Gagal simpan logo: {e}")
+
 
 
 
