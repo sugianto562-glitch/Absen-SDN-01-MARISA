@@ -200,23 +200,21 @@ if menu == "🖥️ Absensi (Scan)":
     
   # --- INI ADALAH BARIS 203 (JANGAN DIHAPUS, TAPI ISINYA DI BAWAHNYA DIGANTI) ---
 with col_cam:
-    # (Tekan TAB satu kali agar menjorok ke dalam)
-    
-    # 1. Setting Server Google (Agar bisa dibuka di HP)
-    rtc_configuration = RTCConfiguration(
-        {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
-    )
+        # Perhatikan: Baris ini masuk 1 level (sejajar secara vertikal)
+        rtc_configuration = RTCConfiguration(
+            {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
+        )
 
-    # 2. Menjalankan Kamera
-    webrtc_streamer(
-        key="barcode-scanner",
-        mode=WebRtcMode.SENDRECV,
-        rtc_configuration=rtc_configuration,  # <--- INI KUNCINYA
-        video_frame_callback=video_frame_callback,
-        media_stream_constraints={"video": True, "audio": False},
-        async_processing=True,
-    )
-    st.caption("Arahkan kartu ke kamera.")
+        # Baris webrtc_streamer harus LURUS (SEJAJAR) dengan rtc_configuration diatasnya
+        webrtc_streamer(
+            key="barcode-scanner",
+            mode=WebRtcMode.SENDRECV,
+            rtc_configuration=rtc_configuration,
+            video_frame_callback=video_frame_callback,
+            media_stream_constraints={"video": True, "audio": False},
+            async_processing=True,
+        )
+        st.caption("Arahkan kartu ke kamera.")
         # --- PERUBAHAN 2: DEFINISI KONFIGURASI STUN SERVER ---
         # Ini wajib agar kamera bisa terbuka di Cloud / HP
         rtc_configuration = RTCConfiguration(
@@ -477,6 +475,7 @@ elif menu == "⚙️ Pengaturan":
                 with open(FILE_SETTINGS, 'w') as f: json.dump(config, f)
                 st.success("Logo berhasil diganti!")
                 st.rerun()
+
 
 
 
