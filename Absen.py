@@ -11,10 +11,10 @@ import av
 import numpy as np
 from pyzbar.pyzbar import decode
 
-# --- PERUBAHAN 1: Menambahkan RTCConfiguration di import ---
+# --- PERUBAHAN: Import RTCConfiguration ---
 from streamlit_webrtc import webrtc_streamer, WebRtcMode, RTCConfiguration
 
-# --- INTEGRASI AIRTABLE (PENGGANTI GOOGLE SHEETS) ---
+# --- INTEGRASI AIRTABLE ---
 from pyairtable import Api
 
 # ==============================================================================
@@ -22,15 +22,13 @@ from pyairtable import Api
 # ==============================================================================
 AIRTABLE_API_KEY = "patXXXXXXXXXXXX..."       # Ganti dengan Personal Access Token Anda
 AIRTABLE_BASE_ID = "appXXXXXXXXXXXX..."       # Ganti dengan Base ID Anda
-AIRTABLE_TABLE_NAME = "Table 1"               # Ganti dengan Nama Tabel (Case Sensitive)
+AIRTABLE_TABLE_NAME = "Table 1"               # Ganti dengan Nama Tabel
 
 def kirim_ke_airtable(data_dict):
     """Mengirim data dict ke Airtable"""
     try:
-        # Cek apakah API Key masih default/kosong
         if "patXXXX" in AIRTABLE_API_KEY:
             return False 
-            
         api = Api(AIRTABLE_API_KEY)
         table = api.table(AIRTABLE_BASE_ID, AIRTABLE_TABLE_NAME)
         table.create(data_dict)
@@ -39,17 +37,12 @@ def kirim_ke_airtable(data_dict):
         print(f"Error Airtable: {e}")
         return False
 
-# --- 0. FUNGSI KAMERA (Callback) ---
+# --- FUNGSI KAMERA (Callback) ---
 def video_frame_callback(frame):
     img = frame.to_ndarray(format="bgr24")
-
-    # Decode barcode/QR code
     decoded_objects = decode(img)
-
     for obj in decoded_objects:
         data = obj.data.decode("utf-8")
-        
-        # Gambar kotak hijau (Visual saja)
         points = obj.polygon
         if len(points) == 4:
             pts = points
@@ -58,18 +51,14 @@ def video_frame_callback(frame):
         n = len(pts)
         for j in range(0, n):
             cv2.line(img, pts[j], pts[(j + 1) % n], (0, 255, 0), 3)
-
         cv2.putText(img, data, (pts[0].x, pts[0].y - 10),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-        
         print(f"TERDETEKSI: {data}")
-
     return av.VideoFrame.from_ndarray(img, format="bgr24")
 
-# --- 1. SETTING HALAMAN ---
+# --- SETTING HALAMAN ---
 st.set_page_config(page_title="Sistem SDN 01 MARISA", page_icon="🏫", layout="wide")
 
-# --- 2. CSS CUSTOM ---
 st.markdown("""
     <style>
     .stApp, p, h1, h2, h3, h4, label, .stMarkdown, span {
@@ -100,7 +89,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- 3. SETUP DATABASE & FOLDER ---
+# --- SETUP DATABASE & FOLDER ---
 FILE_ABSEN = 'database_absen.csv'
 FILE_SISWA = 'master_siswa.csv' 
 FILE_SETTINGS = 'settings.json'
@@ -137,7 +126,7 @@ def buat_link_wa(nomor, pesan):
     if nomor.startswith("0"): nomor = "62" + nomor[1:]
     return f"https://api.whatsapp.com/send?phone={nomor}&text={urllib.parse.quote(pesan)}"
 
-# --- 4. LOGIC LOGIN ---
+# --- LOGIC LOGIN ---
 if 'logged_in' not in st.session_state:
     st.session_state['logged_in'] = False
 
@@ -163,7 +152,7 @@ if not st.session_state['logged_in']:
     login_screen()
     st.stop()
 
-# --- 5. TAMPILAN UTAMA ---
+# --- TAMPILAN UTAMA ---
 st.markdown("""<style>.stApp {background-image: none; background-color: #ffffff;}</style>""", unsafe_allow_html=True)
 
 with st.sidebar:
@@ -188,7 +177,7 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# --- A. MENU SCAN ABSENSI ---
+# --- MENU: SCAN ABSENSI ---
 if menu == "🖥️ Absensi (Scan)":
     now = datetime.now() + timedelta(hours=8)
     
@@ -201,16 +190,15 @@ if menu == "🖥️ Absensi (Scan)":
     col_cam, col_input = st.columns([1, 1])
     
     with col_cam:
-        # Konfigurasi Server Google (STUN) agar kamera jalan di HP
+        # --- PERUBAHAN: Konfigurasi STUN Server Google ---
         rtc_configuration = RTCConfiguration(
             {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
         )
 
-        # Menjalankan Kamera
         webrtc_streamer(
             key="barcode-scanner",
             mode=WebRtcMode.SENDRECV,
-            rtc_configuration=rtc_configuration, 
+            rtc_configuration=rtc_configuration, # Menggunakan konfigurasi STUN
             video_frame_callback=video_frame_callback,
             media_stream_constraints={"video": True, "audio": False},
             async_processing=True,
@@ -225,7 +213,7 @@ if menu == "🖥️ Absensi (Scan)":
             st.write("⌨️ MASUKKAN NISN:")
             nisn_input = st.text_input("Ketik NISN lalu Enter:", key="scan_main").strip()
 
-    # --- LOGIKA ABSEN DAN AIRTABLE ---
+    # --- LOGIKA ABSEN ---
     if nisn_input:
         df_siswa = pd.read_csv(FILE_SISWA, dtype={'NISN': str})
         siswa = df_siswa[df_siswa['NISN'] == nisn_input]
@@ -244,13 +232,13 @@ if menu == "🖥️ Absensi (Scan)":
             if not sudah_absen.empty:
                 st.warning(f"⚠️ {nama_s} Sudah absen {ket_fix} hari ini!")
             else:
-                # 1. Simpan ke CSV Lokal
+                # Simpan Lokal
                 baru = {'Tanggal': now.strftime("%Y-%m-%d"), 'Jam': now.strftime("%H:%M:%S"), 
                         'NISN': nisn_input, 'Nama': nama_s, 'Kelas': kelas_s, 'Keterangan': ket_fix}
                 df_absen = pd.concat([df_absen, pd.DataFrame([baru])], ignore_index=True)
                 df_absen.to_csv(FILE_ABSEN, index=False)
                 
-                # 2. Simpan ke Airtable
+                # Simpan Airtable
                 with st.spinner("Mengirim ke Airtable..."):
                     dt_kirim = {
                         "Tanggal": now.strftime("%Y-%m-%d"),
@@ -261,11 +249,8 @@ if menu == "🖥️ Absensi (Scan)":
                         "Keterangan": ket_fix
                     }
                     sukses = kirim_ke_airtable(dt_kirim)
-                    
-                    if sukses:
-                        st.toast("✅ Tersimpan di Airtable!", icon="☁️")
-                    else:
-                        st.warning("⚠️ Tersimpan di Lokal, tapi Gagal ke Airtable (Cek API Key).")
+                    if sukses: st.toast("✅ Tersimpan di Airtable!", icon="☁️")
+                    else: st.warning("⚠️ Tersimpan Lokal, Gagal Airtable.")
 
                 # Tampilan Sukses
                 c_foto, c_teks = st.columns([1,3])
@@ -283,7 +268,7 @@ if menu == "🖥️ Absensi (Scan)":
         else:
             st.error("❌ Data Siswa Tidak Ditemukan!")
 
-    # Manual Input Form
+    # Input Manual Guru
     st.markdown("---")
     with st.expander("📝 Input Siswa Tidak Hadir (Sakit/Izin/Alpa)"):
         with st.form("manual"):
@@ -300,14 +285,12 @@ if menu == "🖥️ Absensi (Scan)":
                     nm = df_s[df_s['NISN']==nisn_m].iloc[0]['Nama']
                     kls = df_s[df_s['NISN']==nisn_m].iloc[0]['Kelas']
                     
-                    # Simpan Lokal
                     df_a = pd.read_csv(FILE_ABSEN)
                     b = {'Tanggal': now.strftime("%Y-%m-%d"), 'Jam': now.strftime("%H:%M:%S"), 
                          'NISN': nisn_m, 'Nama': nm, 'Kelas': kls, 'Keterangan': ket}
                     df_a = pd.concat([df_a, pd.DataFrame([b])], ignore_index=True)
                     df_a.to_csv(FILE_ABSEN, index=False)
                     
-                    # Simpan Airtable
                     dt_kirim_manual = {
                         "Tanggal": now.strftime("%Y-%m-%d"),
                         "Jam": now.strftime("%H:%M:%S"),
@@ -316,12 +299,10 @@ if menu == "🖥️ Absensi (Scan)":
                         "Kelas": kls,
                         "Keterangan": ket
                     }
-                    sukses_man = kirim_ke_airtable(dt_kirim_manual)
-                    if sukses_man:
-                        st.toast("Data Manual Tersimpan di Airtable!", icon="☁️")
-                        
+                    kirim_ke_airtable(dt_kirim_manual)
                     st.success(f"Tersimpan: {nm} - {ket}")
-# --- B. MENU LAPORAN ---
+
+# --- MENU: LAPORAN ---
 elif menu == "📊 Laporan & Persentase":
     st.title("📊 Laporan & Download Data")
     col_tgl, col_space = st.columns([1, 2])
@@ -362,7 +343,7 @@ elif menu == "📊 Laporan & Persentase":
     else:
         st.warning("Data Master Siswa Kosong.")
 
-# --- C. DATA MASTER ---
+# --- MENU: DATA MASTER ---
 elif menu == "📂 Data Master":
     st.title("Data Master Siswa")
     tab1, tab2 = st.tabs(["➕ Tambah Data", "✏️ Edit / Hapus"])
@@ -403,7 +384,7 @@ elif menu == "📂 Data Master":
                     df.to_csv(FILE_SISWA, index=False)
                     st.rerun()
 
-# --- D. UPLOAD FOTO ---
+# --- MENU: UPLOAD FOTO ---
 elif menu == "📸 Upload Foto":
     st.title("📸 Upload Foto Siswa")
     df_s = pd.read_csv(FILE_SISWA, dtype={'NISN':str})
@@ -430,7 +411,7 @@ elif menu == "📸 Upload Foto":
                         st.rerun()
     else: st.warning("Data Master Kosong.")
 
-# --- E. PENGATURAN ---
+# --- MENU: PENGATURAN ---
 elif menu == "⚙️ Pengaturan":
     st.title("Pengaturan Sekolah")
     col_set1, col_set2 = st.columns(2)
@@ -459,8 +440,3 @@ elif menu == "⚙️ Pengaturan":
                 with open(FILE_SETTINGS, 'w') as f: json.dump(config, f)
                 st.success("Logo berhasil diganti!")
                 st.rerun()
-
-
-
-
-
