@@ -219,7 +219,7 @@ with col_cam:
     st.caption("Arahkan kartu ke kamera.")
         # --- PERUBAHAN 2: DEFINISI KONFIGURASI STUN SERVER ---
         # Ini wajib agar kamera bisa terbuka di Cloud / HP
-            rtc_configuration = RTCConfiguration(
+        rtc_configuration = RTCConfiguration(
             {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
         )
 
@@ -477,5 +477,6 @@ elif menu == "⚙️ Pengaturan":
                 with open(FILE_SETTINGS, 'w') as f: json.dump(config, f)
                 st.success("Logo berhasil diganti!")
                 st.rerun()
+
 
 
