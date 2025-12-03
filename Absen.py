@@ -198,34 +198,19 @@ if menu == "🖥️ Absensi (Scan)":
     c2.metric("Jam (WITA)", now.strftime("%H:%M:%S"))
     st.divider()
     
-  # --- INI ADALAH BARIS 203 (JANGAN DIHAPUS, TAPI ISINYA DI BAWAHNYA DIGANTI) ---
-with col_cam:
-        # Perhatikan: Baris ini masuk 1 level (sejajar secara vertikal)
+    col_cam, col_input = st.columns([1, 1])
+    
+    with col_cam:
+        # Konfigurasi Server Google (STUN) agar kamera jalan di HP
         rtc_configuration = RTCConfiguration(
             {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
         )
 
-        # Baris webrtc_streamer harus LURUS (SEJAJAR) dengan rtc_configuration diatasnya
+        # Menjalankan Kamera
         webrtc_streamer(
             key="barcode-scanner",
             mode=WebRtcMode.SENDRECV,
-            rtc_configuration=rtc_configuration,
-            video_frame_callback=video_frame_callback,
-            media_stream_constraints={"video": True, "audio": False},
-            async_processing=True,
-        )
-        st.caption("Arahkan kartu ke kamera.")
-        # --- PERUBAHAN 2: DEFINISI KONFIGURASI STUN SERVER ---
-        # Ini wajib agar kamera bisa terbuka di Cloud / HP
-        rtc_configuration = RTCConfiguration(
-            {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
-        )
-
-        # --- PERUBAHAN 3: MEMASUKKAN CONFIG KE WEBRTC STREAMER ---
-        webrtc_streamer(
-            key="barcode-scanner",
-            mode=WebRtcMode.SENDRECV,
-            rtc_configuration=rtc_configuration, # <--- Ditambahkan disini
+            rtc_configuration=rtc_configuration, 
             video_frame_callback=video_frame_callback,
             media_stream_constraints={"video": True, "audio": False},
             async_processing=True,
@@ -265,7 +250,7 @@ with col_cam:
                 df_absen = pd.concat([df_absen, pd.DataFrame([baru])], ignore_index=True)
                 df_absen.to_csv(FILE_ABSEN, index=False)
                 
-                # 2. Simpan ke Airtable (PENGGANTI GOOGLE SHEETS)
+                # 2. Simpan ke Airtable
                 with st.spinner("Mengirim ke Airtable..."):
                     dt_kirim = {
                         "Tanggal": now.strftime("%Y-%m-%d"),
@@ -280,7 +265,7 @@ with col_cam:
                     if sukses:
                         st.toast("✅ Tersimpan di Airtable!", icon="☁️")
                     else:
-                        st.warning("⚠️ Tersimpan di Lokal, tapi Gagal ke Airtable (Cek API Key/Koneksi).")
+                        st.warning("⚠️ Tersimpan di Lokal, tapi Gagal ke Airtable (Cek API Key).")
 
                 # Tampilan Sukses
                 c_foto, c_teks = st.columns([1,3])
@@ -298,7 +283,7 @@ with col_cam:
         else:
             st.error("❌ Data Siswa Tidak Ditemukan!")
 
-    # Manual (Airtable juga)
+    # Manual Input Form
     st.markdown("---")
     with st.expander("📝 Input Siswa Tidak Hadir (Sakit/Izin/Alpa)"):
         with st.form("manual"):
@@ -336,7 +321,6 @@ with col_cam:
                         st.toast("Data Manual Tersimpan di Airtable!", icon="☁️")
                         
                     st.success(f"Tersimpan: {nm} - {ket}")
-
 # --- B. MENU LAPORAN ---
 elif menu == "📊 Laporan & Persentase":
     st.title("📊 Laporan & Download Data")
@@ -475,6 +459,7 @@ elif menu == "⚙️ Pengaturan":
                 with open(FILE_SETTINGS, 'w') as f: json.dump(config, f)
                 st.success("Logo berhasil diganti!")
                 st.rerun()
+
 
 
 
