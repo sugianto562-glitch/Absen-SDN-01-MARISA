@@ -4,3 +4,4 @@ opencv-python-headless
 aiortc>=1.5.0
 av
 pyzbar
+pyairtable
