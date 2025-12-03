@@ -10,7 +10,9 @@ import cv2
 import av
 import numpy as np
 from pyzbar.pyzbar import decode
-from streamlit_webrtc import webrtc_streamer, WebRtcMode
+
+# --- PERUBAHAN 1: Menambahkan RTCConfiguration di import ---
+from streamlit_webrtc import webrtc_streamer, WebRtcMode, RTCConfiguration
 
 # --- INTEGRASI AIRTABLE (PENGGANTI GOOGLE SHEETS) ---
 from pyairtable import Api
@@ -199,9 +201,17 @@ if menu == "🖥️ Absensi (Scan)":
     col_cam, col_input = st.columns([1, 1])
     
     with col_cam:
+        # --- PERUBAHAN 2: DEFINISI KONFIGURASI STUN SERVER ---
+        # Ini wajib agar kamera bisa terbuka di Cloud / HP
+        rtc_configuration = RTCConfiguration(
+            {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
+        )
+
+        # --- PERUBAHAN 3: MEMASUKKAN CONFIG KE WEBRTC STREAMER ---
         webrtc_streamer(
             key="barcode-scanner",
             mode=WebRtcMode.SENDRECV,
+            rtc_configuration=rtc_configuration, # <--- Ditambahkan disini
             video_frame_callback=video_frame_callback,
             media_stream_constraints={"video": True, "audio": False},
             async_processing=True,
