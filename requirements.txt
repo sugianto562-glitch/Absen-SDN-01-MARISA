@@ -1,6 +1,9 @@
 streamlit
+opencv-python-headless
+av
+pyzbar
+streamlit-webrtc
+pyairtable
+numpy
 pandas
-xlsxwriter
-openpyxl
 pillow
-st-gsheets-connection
