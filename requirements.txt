@@ -1,7 +1,5 @@
-streamlit>=1.28.0
+streamlit
 streamlit-webrtc>=0.47.0
 opencv-python-headless
-numpy
+aiortc>=1.5.0
 av
-pyzbar
-pyairtable
