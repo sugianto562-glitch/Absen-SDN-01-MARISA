@@ -1,4 +1,4 @@
-import streamlit as st
+from streamlit_webrtc import webrtc_streamer, RTCConfiguration, WebRtcMode
 import pandas as pd
 from datetime import datetime, timedelta
 import os
@@ -159,13 +159,45 @@ if menu == "🖥️ Absensi (Scan)":
     c2.metric("Jam (WITA)", now.strftime("%H:%M:%S"))
     st.divider()
     
-    col_cam, col_input = st.columns([1, 1])
-    with col_cam:
-        # KONFIGURASI STUN SERVER
-        rtc_configuration = RTCConfiguration({"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]})
-        webrtc_streamer(key="barcode-scanner", mode=WebRtcMode.SENDRECV, rtc_configuration=rtc_configuration, video_frame_callback=video_frame_callback, media_stream_constraints={"video": True, "audio": False}, async_processing=True)
-        st.caption("Arahkan kartu ke kamera.")
+   # 1. Konfigurasi agar kamera jalan di HP/Internet (STUN Server)
+    rtc_configuration = RTCConfiguration(
+        {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
+    )
 
+    # 2. Menjalankan Streamer
+    # PENTING: 'video_frame_callback' menghubungkan kamera dengan fungsi baca barcode di atas
+    webrtc_streamer(
+        key="barcode-scanner",
+        mode=WebRtcMode.SENDRECV,
+        rtc_configuration=rtc_configuration,
+        video_frame_callback=video_frame_callback,  # <--- Pastikan fungsi ini sudah ada di baris 37
+        media_stream_constraints={"video": True, "audio": False},
+        async_processing=True,
+    )
+    
+    st.info("Posisi kartu harus pas di tengah kamera.")
+
+# ... dilanjutkan dengan with col_input: ...
+    st.write("### Scan Barcode") # Opsional: Judul kecil
+    
+    # 1. Konfigurasi STUN Server (Agar jalan di HP/Jaringan lain)
+    rtc_configuration = RTCConfiguration(
+        {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
+    )
+
+    # 2. Menjalankan Streamer Kamera
+    # Penting: parameter 'video_frame_callback' harus diisi dengan nama fungsi 
+    # yang Anda buat di baris 37 (def video_frame_callback)
+    webrtc_streamer(
+        key="barcode-scan",
+        mode=WebRtcMode.SENDRECV,
+        rtc_configuration=rtc_configuration,
+        video_frame_callback=video_frame_callback, 
+        media_stream_constraints={"video": True, "audio": False},
+        async_processing=True,
+    )
+    
+    st.caption("Arahkan kartu ke kamera.")
     with col_input:
         st.markdown("### 👇 INPUT MANUAL / HASIL SCAN")
         with st.container(border=True):
@@ -359,3 +391,4 @@ elif menu == "⚙️ Pengaturan":
                 with open(FILE_SETTINGS, 'w') as f: json.dump(config, f)
                 st.success("Logo berhasil diganti!")
                 st.rerun()
+
