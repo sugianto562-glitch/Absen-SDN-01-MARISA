@@ -3,3 +3,4 @@ streamlit-webrtc>=0.47.0
 opencv-python-headless
 aiortc>=1.5.0
 av
+pyzbar
