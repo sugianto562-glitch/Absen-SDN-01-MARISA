@@ -164,19 +164,16 @@ if menu == "🖥️ Absensi (Scan)":
     rtc_configuration = RTCConfiguration(
         {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
     )
+# 3. Layout Input (Perbaikan error NameError)
+st.caption("Arahkan kartu ke kamera")
 
+# GANTI 'with col_input:' MENJADI 'with st.container():'
+with st.container(): 
+    st.markdown("### 👇 INPUT MANUAL (Jika Scan Gagal)")
+ 
     # 2. Menjalankan Streamer
     # PENTING: 'video_frame_callback' menghubungkan kamera dengan fungsi baca barcode di atas
-    webrtc_streamer(
-        key="barcode-scanner",
-        mode=WebRtcMode.SENDRECV,
-        rtc_configuration=rtc_configuration,
-        video_frame_callback=video_frame_callback,  # <--- Pastikan fungsi ini sudah ada di baris 37
-        media_stream_constraints={"video": True, "audio": False},
-        async_processing=True,
-    )
-    
-    st.info("Posisi kartu harus pas di tengah kamera.")
+   7 st.info("Posisi kartu harus pas di tengah kamera.")
 
 # ... dilanjutkan dengan with col_input: ...
     st.write("### Scan Barcode") # Opsional: Judul kecil
@@ -199,7 +196,7 @@ if menu == "🖥️ Absensi (Scan)":
     )
     
     st.caption("Arahkan kartu ke kamera.")
-    with col_input:
+    with st.container():
         st.markdown("### 👇 INPUT MANUAL / HASIL SCAN")
         with st.container(border=True):
             st.write("🔴 STATUS:")
@@ -392,5 +389,6 @@ elif menu == "⚙️ Pengaturan":
                 with open(FILE_SETTINGS, 'w') as f: json.dump(config, f)
                 st.success("Logo berhasil diganti!")
                 st.rerun()
+
 
 
