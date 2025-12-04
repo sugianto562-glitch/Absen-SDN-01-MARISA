@@ -165,29 +165,7 @@ if menu == "🖥️ Absensi (Scan)":
         {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
     )
 # 3. Layout Input (Perbaikan error NameError)
-st.caption("Arahkan kartu ke kamera")
-
-# GANTI 'with col_input:' MENJADI 'with st.container():'
 with st.container(): 
-    st.markdown("### 👇 INPUT MANUAL (Jika Scan Gagal)")
- 
-    # 2. Menjalankan Streamer
-    # PENTING: 'video_frame_callback' menghubungkan kamera dengan fungsi baca barcode di atas
-   7 st.info("Posisi kartu harus pas di tengah kamera.")
-
-# ... dilanjutkan dengan with col_input: ...
-    st.write("### Scan Barcode") # Opsional: Judul kecil
-    
-    # 1. Konfigurasi STUN Server (Agar jalan di HP/Jaringan lain)
-    rtc_configuration = RTCConfiguration(
-        {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
-    )
-
-    # 2. Menjalankan Streamer Kamera
-    # Penting: parameter 'video_frame_callback' harus diisi dengan nama fungsi 
-    # yang Anda buat di baris 37 (def video_frame_callback)
-    webrtc_streamer(
-        key="barcode-scan",
         mode=WebRtcMode.SENDRECV,
         rtc_configuration=rtc_configuration,
         video_frame_callback=video_frame_callback, 
@@ -389,6 +367,7 @@ elif menu == "⚙️ Pengaturan":
                 with open(FILE_SETTINGS, 'w') as f: json.dump(config, f)
                 st.success("Logo berhasil diganti!")
                 st.rerun()
+
 
 
 
