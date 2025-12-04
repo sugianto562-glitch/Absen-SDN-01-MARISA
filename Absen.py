@@ -171,8 +171,7 @@ with st.container():
         video_frame_callback=video_frame_callback, 
         media_stream_constraints={"video": True, "audio": False},
         async_processing=True,
-    )
-    
+        
     st.caption("Arahkan kartu ke kamera.")
     with st.container():
         st.markdown("### 👇 INPUT MANUAL / HASIL SCAN")
@@ -367,6 +366,7 @@ elif menu == "⚙️ Pengaturan":
                 with open(FILE_SETTINGS, 'w') as f: json.dump(config, f)
                 st.success("Logo berhasil diganti!")
                 st.rerun()
+
 
 
 
