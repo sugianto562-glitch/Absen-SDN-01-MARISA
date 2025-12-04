@@ -1,6 +1,6 @@
+import streamlit as st
 from streamlit_webrtc import webrtc_streamer, RTCConfiguration, WebRtcMode
 import pandas as pd
-import streamlit as st
 from datetime import datetime, timedelta
 import os
 import json
@@ -11,9 +11,6 @@ import cv2
 import av
 import numpy as np
 from pyzbar.pyzbar import decode
-
-# --- Import Library Kamera & Airtable ---
-from streamlit_webrtc import webrtc_streamer, WebRtcMode, RTCConfiguration
 from pyairtable import Api
 
 # ==============================================================================
@@ -63,7 +60,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- 2. SETUP DATABASE & FOLDER (MODIFIKASI ANTI ERROR) ---
+# --- 2. SETUP DATABASE & FOLDER ---
 FILE_ABSEN = 'database_absen.csv'
 FILE_SISWA = 'master_siswa.csv' 
 FILE_SETTINGS = 'settings.json'
@@ -73,23 +70,14 @@ if not os.path.exists(FOLDER_FOTO): os.makedirs(FOLDER_FOTO)
 
 DAFTAR_KELAS = ["1A", "1B", "1C", "2A", "2B", "2C", "3A", "3B", "3C", "4A", "4B", "5A", "5B", "6A", "6B", "Guru/Staf"]
 
-# --- FUNGSI INI SUDAH DIPERBAIKI AGAR KEBAL FILE KOSONG ---
 def init_csv(filename, columns):
     try:
-        # Cek apakah file ada
-        if not os.path.exists(filename):
-            raise FileNotFoundError
-        
-        # Coba baca file
+        if not os.path.exists(filename): raise FileNotFoundError
         df = pd.read_csv(filename)
-        
-        # Cek kelengkapan kolom
         for col in columns:
             if col not in df.columns: df[col] = ""
         df.to_csv(filename, index=False)
-        
     except (FileNotFoundError, pd.errors.EmptyDataError):
-        # Jika file tidak ada ATAU kosong/rusak, buat baru
         df = pd.DataFrame(columns=columns)
         df.to_csv(filename, index=False)
 
@@ -160,19 +148,24 @@ if menu == "🖥️ Absensi (Scan)":
     c2.metric("Jam (WITA)", now.strftime("%H:%M:%S"))
     st.divider()
     
-   # 1. Konfigurasi agar kamera jalan di HP/Internet (STUN Server)
+    # 1. Konfigurasi STUN Server (Agar jalan di HP)
     rtc_configuration = RTCConfiguration(
         {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
     )
-# 3. Layout Input (Perbaikan error NameError)
-with st.container(): 
+
+    # 2. KAMERA UTAMA (Hanya Satu)
+    webrtc_streamer(
+        key="barcode-scanner-fix",
         mode=WebRtcMode.SENDRECV,
         rtc_configuration=rtc_configuration,
-        video_frame_callback=video_frame_callback, 
+        video_frame_callback=video_frame_callback,
         media_stream_constraints={"video": True, "audio": False},
         async_processing=True,
+    )
         
     st.caption("Arahkan kartu ke kamera.")
+    
+    # 3. AREA INPUT MANUAL (Perbaikan dari col_input menjadi st.container)
     with st.container():
         st.markdown("### 👇 INPUT MANUAL / HASIL SCAN")
         with st.container(border=True):
@@ -366,8 +359,3 @@ elif menu == "⚙️ Pengaturan":
                 with open(FILE_SETTINGS, 'w') as f: json.dump(config, f)
                 st.success("Logo berhasil diganti!")
                 st.rerun()
-
-
-
-
-
