@@ -16,7 +16,7 @@ from pyairtable import Api
 # ==============================================================================
 # ⚙️ KONFIGURASI AIRTABLE (WAJIB DIISI)
 # ==============================================================================
-AIRTABLE_API_KEY = "st.secrets("AIRTABLE_API_KEY")       # Ganti dengan Token Anda
+AIRTABLE_API_KEY = st.secrets["AIRTABLE_API_KEY"]    # Ganti dengan Token Anda
 AIRTABLE_BASE_ID = "appJSVM6gP8cuSnKZ/tblpbg"       # Ganti dengan Base ID Anda
 AIRTABLE_TABLE_NAME = "Table 1"               # Ganti dengan Nama Tabel
 
@@ -359,5 +359,6 @@ elif menu == "⚙️ Pengaturan":
                 with open(FILE_SETTINGS, 'w') as f: json.dump(config, f)
                 st.success("Logo berhasil diganti!")
                 st.rerun()
+
 
 
