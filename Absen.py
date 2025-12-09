@@ -185,14 +185,32 @@ if menu == "🖥️ Absensi (Scan)":
             df_absen = pd.read_csv(FILE_ABSEN)
             sudah_absen = df_absen[(df_absen['Tanggal'] == now.strftime("%Y-%m-%d")) & (df_absen['NISN'] == nisn_input) & (df_absen['Keterangan'] == ket_fix)]
             
-            if not sudah_absen.empty: st.warning(f"⚠️ {nama_s} Sudah absen {ket_fix} hari ini!")
+               if not sudah_absen.empty: st.warning(f"⚠️ {nama_s} Sudah absen {ket_fix} hari ini!")
             else:
-                baru = {'Tanggal': now.strftime("%Y-%m-%d"), 'Jam': now.strftime("%H:%M:%S"), 'NISN': nisn_input, 'Nama': nama_s,  "Class Name": kelas_s,'Keterangan': ket_fix}
+                # 1. SIMPAN LOKAL (Gunakan 'Kelas' untuk CSV)
+                baru = {'Tanggal': now.strftime("%Y-%m-%d"), 'Jam': now.strftime("%H:%M:%S"), 'NISN': nisn_input, 'Nama': nama_s, 'Kelas': kelas_s, 'Keterangan': ket_fix}
                 df_absen = pd.concat([df_absen, pd.DataFrame([baru])], ignore_index=True)
                 df_absen.to_csv(FILE_ABSEN, index=False)
                 
                 with st.spinner("Mengirim ke Airtable..."):
-                    dt_kirim = {"Tanggal": now.strftime("%Y-%m-%d"), "Jam": now.strftime("%H:%M:%S"), "NISN": nisn_input, "Nama": nama_s, 'Class Name': kelas_s, "Keterangan": ket_fix}
+                    # 2. KIRIM KE AIRTABLE (Gunakan 'Class Name')
+                    dt_kirim = {
+                        "Tanggal": now.strftime("%Y-%m-%d"), 
+                        "Jam": now.strftime("%H:%M:%S"), 
+                        "NISN": nisn_input, 
+                        "Nama": nama_s, 
+                        "Class Name": kelas_s,  # <-- KUNCI AIRTABLE
+                        "Keterangan": ket_fix
+                    }
+                    sukses = kirim_ke_airtable(dt_kirim)
+                    if sukses: st.toast("✅ Tersimpan di Airtable!", icon="☁️")
+                    else: st.warning("⚠️ Tersimpan Lokal, Gagal Airtable.")
+                baru = {'Tanggal': now.strftime("%Y-%m-%d"), 'Jam': now.strftime("%H:%M:%S"), 'NISN': nisn_input, 'Nama': nama_s,  'Class Name': kelas_s,'Keterangan': ket_fix}
+                df_absen = pd.concat([df_absen, pd.DataFrame([baru])], ignore_index=True)
+                df_absen.to_csv(FILE_ABSEN, index=False)
+                
+                with st.spinner("Mengirim ke Airtable..."):
+                    dt_kirim = {"Tanggal": now.strftime("%Y-%m-%d"), "Jam": now.strftime("%H:%M:%S"), "NISN": nisn_input, "Nama": nama_s, 'Kelas': kelas_s, "Keterangan": ket_fix}
                     sukses = kirim_ke_airtable(dt_kirim)
                     if sukses: st.toast("✅ Tersimpan di Airtable!", icon="☁️")
                     else: st.warning("⚠️ Tersimpan Lokal, Gagal Airtable.")
@@ -222,12 +240,23 @@ if menu == "🖥️ Absensi (Scan)":
                     nm = df_s[df_s['NISN']==nisn_m].iloc[0]['Nama']
                     kls = df_s[df_s['NISN']==nisn_m].iloc[0]['Kelas']
                     df_a = pd.read_csv(FILE_ABSEN)
+                    
+                    # 1. SIMPAN LOKAL (Gunakan 'Kelas' untuk CSV)
                     b = {'Tanggal': now.strftime("%Y-%m-%d"), 'Jam': now.strftime("%H:%M:%S"), 'NISN': nisn_m, 'Nama': nm, 'Kelas': kls, 'Keterangan': ket}
                     df_a = pd.concat([df_a, pd.DataFrame([b])], ignore_index=True)
                     df_a.to_csv(FILE_ABSEN, index=False)
-                    kirim_ke_airtable({"Tanggal": now.strftime("%Y-%m-%d"), "Jam": now.strftime("%H:%M:%S"), "NISN": nisn_m, "Nama": nm, "Kelas": kls, "Keterangan": ket})
+                    
+                    # 2. KIRIM KE AIRTABLE (Gunakan 'Class Name')
+                    data_airtable = {
+                        "Tanggal": now.strftime("%Y-%m-%d"), 
+                        "Jam": now.strftime("%H:%M:%S"), 
+                        "NISN": nisn_m, 
+                        "Nama": nm, 
+                        "Class Name": kls, # <-- KUNCI AIRTABLE YANG BENAR
+                        "Keterangan": ket
+                    }
+                    kirim_ke_airtable(data_airtable)
                     st.success(f"Tersimpan: {nm} - {ket}")
-
 # --- B. MENU LAPORAN ---
 elif menu == "📊 Laporan & Persentase":
     st.title("📊 Laporan & Download Data")
@@ -359,6 +388,7 @@ elif menu == "⚙️ Pengaturan":
                 with open(FILE_SETTINGS, 'w') as f: json.dump(config, f)
                 st.success("Logo berhasil diganti!")
                 st.rerun()
+
 
 
 
