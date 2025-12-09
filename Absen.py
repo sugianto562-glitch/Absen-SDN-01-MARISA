@@ -407,22 +407,41 @@ elif menu == "📂 Data Master":
             pilih = st.selectbox("Cari Siswa:", list_siswa_dengan_kelas)
             nisn_pilih = pilih.split(" - ")[0]
             data = df[df['NISN'] == nisn_pilih].iloc[0]
-            with st.form("edit"):
-                e_nama = st.text_input("Nama", data['Nama'])
-                kelas_index = DAFTAR_KELAS.index(data['Kelas']) if data['Kelas'] in DAFTAR_KELAS else 0
-                e_kelas = st.selectbox("Kelas", DAFTAR_KELAS, index=kelas_index)
-                e_hp = st.text_input("HP", str(data['No_HP']).replace(".0", ""))
-                c_sv, c_del = st.columns(2)
-                if c_sv.form_submit_button("Update Data", type="primary"):
-                    df.loc[df['NISN'] == nisn_pilih, ['Nama', 'Kelas', 'No_HP']] = [e_nama, e_kelas, e_hp]
-                    df.to_csv(FILE_SISWA, index=False)
-                    st.success("Update Berhasil")
-                    st.rerun()
-                if c_del.form_submit_button("Hapus Siswa", type="secondary"):
-                    df = df[df['NISN'] != nisn_pilih]
-                    df.to_csv(FILE_SISWA, index=False)
-                    st.success(f"Siswa dengan NISN {nisn_pilih} berhasil dihapus.")
-                    st.rerun()
+            
+            # --- MODIFIKASI: Menambahkan kolom untuk Foto dan Form Edit ---
+            col_foto, col_edit = st.columns([1, 2])
+
+            with col_foto:
+                st.markdown("##### Foto Siswa")
+                path_foto = f"{FOLDER_FOTO}/{nisn_pilih}.jpg"
+                if os.path.exists(path_foto):
+                    st.image(path_foto, width=150)
+                else:
+                    st.warning("Foto belum diunggah.")
+                    st.image("https://via.placeholder.com/150?text=No+Image", width=150)
+                
+            with col_edit:
+                with st.form("edit"):
+                    st.markdown(f"##### Edit Data NISN: {nisn_pilih}")
+                    e_nama = st.text_input("Nama", data['Nama'])
+                    # Cari index kelas yang sesuai, default ke 0 jika tidak ada
+                    kelas_index = DAFTAR_KELAS.index(data['Kelas']) if data['Kelas'] in DAFTAR_KELAS else 0
+                    e_kelas = st.selectbox("Kelas", DAFTAR_KELAS, index=kelas_index)
+                    e_hp = st.text_input("HP", str(data['No_HP']).replace(".0", "")) # Hilangkan .0 jika ada
+                    c_sv, c_del = st.columns(2)
+                    if c_sv.form_submit_button("Update Data", type="primary"):
+                        df.loc[df['NISN'] == nisn_pilih, ['Nama', 'Kelas', 'No_HP']] = [e_nama, e_kelas, e_hp]
+                        df.to_csv(FILE_SISWA, index=False)
+                        st.success("Update Berhasil")
+                        st.rerun()
+                    if c_del.form_submit_button("Hapus Siswa", type="secondary"):
+                        df = df[df['NISN'] != nisn_pilih]
+                        df.to_csv(FILE_SISWA, index=False)
+                        # Hapus juga fotonya jika ada
+                        if os.path.exists(path_foto):
+                            os.remove(path_foto)
+                        st.success(f"Siswa dengan NISN {nisn_pilih} berhasil dihapus.")
+                        st.rerun()
         else:
             st.info("Data Master Siswa masih kosong. Silakan tambahkan data di tab Tambah Data.")
 
