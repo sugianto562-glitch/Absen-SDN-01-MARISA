@@ -185,7 +185,7 @@ if menu == "🖥️ Absensi (Scan)":
             df_absen = pd.read_csv(FILE_ABSEN)
             sudah_absen = df_absen[(df_absen['Tanggal'] == now.strftime("%Y-%m-%d")) & (df_absen['NISN'] == nisn_input) & (df_absen['Keterangan'] == ket_fix)]
             
-               if not sudah_absen.empty: st.warning(f"⚠️ {nama_s} Sudah absen {ket_fix} hari ini!")
+            if not sudah_absen.empty: st.warning(f"⚠️ {nama_s} Sudah absen {ket_fix} hari ini!")
             else:
                baru = {'Tanggal': now.strftime("%Y-%m-%d"), 'Jam': now.strftime("%H:%M:%S"), 'NISN': nisn_input, 'Nama': nama_s, 'Kelas': kelas_s, 'Keterangan': ket_fix}
                 df_absen = pd.concat([df_absen, pd.DataFrame([baru])], ignore_index=True)
@@ -386,6 +386,7 @@ elif menu == "⚙️ Pengaturan":
                 with open(FILE_SETTINGS, 'w') as f: json.dump(config, f)
                 st.success("Logo berhasil diganti!")
                 st.rerun()
+
 
 
 
