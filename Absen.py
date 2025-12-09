@@ -1,4 +1,5 @@
 import streamlit as st
+# webrtc_streamer diimpor tapi tidak digunakan di Menu A
 from streamlit_webrtc import webrtc_streamer, RTCConfiguration, WebRtcMode
 import pandas as pd
 from datetime import datetime, timedelta
@@ -30,7 +31,6 @@ def kirim_ke_airtable(data_dict):
             return False 
         
         api = Api(AIRTABLE_API_KEY)
-        # Pastikan AIRTABLE_BASE_ID tidak berisi /tblpbg di sini
         table = api.table(AIRTABLE_BASE_ID, AIRTABLE_TABLE_NAME)
         table.create(data_dict)
         return True
@@ -39,27 +39,23 @@ def kirim_ke_airtable(data_dict):
         return False
 
 # --- 0. FUNGSI KAMERA (Callback) ---
+# Fungsi ini tidak dipanggil lagi di Menu Absensi (Scan) yang baru
 def video_frame_callback(frame):
     """Fungsi callback untuk memproses frame video (scan QR/Barcode)."""
+    # ... (kode ini tetap ada, tapi tidak digunakan untuk absensi)
     img = frame.to_ndarray(format="bgr24")
     decoded_objects = decode(img)
     
-    # Memastikan st.session_state['nisn_scan'] ada
     if 'nisn_scan' not in st.session_state:
         st.session_state['nisn_scan'] = None
         
     for obj in decoded_objects:
         data = obj.data.decode("utf-8")
-        points = obj.polygon
-        
-        # Simpan hasil scan ke session state
         st.session_state['nisn_scan'] = data
         
-        # Gambar kotak di sekitar barcode
-        if len(points) == 4: 
-            pts = points
-        else: 
-            pts = cv2.convexHull(np.array([point for point in points], dtype=np.float32))
+        points = obj.polygon
+        if len(points) == 4: pts = points
+        else: pts = cv2.convexHull(np.array([point for point in points], dtype=np.float32))
         
         n = len(pts)
         for j in range(0, n):
@@ -91,7 +87,6 @@ FOLDER_FOTO = 'foto_siswa'
 
 if not os.path.exists(FOLDER_FOTO): os.makedirs(FOLDER_FOTO)
 
-# Daftar Kelas Diperbaiki agar tidak ada spasi di 'Guru/Staf'
 DAFTAR_KELAS = ["1A", "1B", "1C", "2A", "2B", "2C", "3A", "3B", "3C", "4A", "4B", "5A", "5B", "6A", "6B", "Guru/Staf"]
 
 def init_csv(filename, columns):
@@ -177,33 +172,18 @@ if menu == "🖥️ Absensi (Scan)":
     c1, c2 = st.columns([3,1])
     c1.title("Scan Absensi")
     c1.markdown(f"#### 📆 {now.strftime('%A, %d %B %Y')}")
-    # Gunakan st.empty untuk memperbarui waktu
     time_placeholder = c2.empty()
     time_placeholder.metric("Jam (WITA)", now.strftime("%H:%M:%S"))
     st.divider()
     
-    # 1. Konfigurasi STUN Server (Agar jalan di HP)
-    rtc_configuration = RTCConfiguration(
-        {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
-    )
-
-    st.markdown("### 📷 Tempat Scan Barcode / QR Code")
-    # 2. KAMERA UTAMA (Hanya Satu)
-    webrtc_streamer(
-        key="barcode-scanner-fix",
-        mode=WebRtcMode.SENDRECV,
-        rtc_configuration=rtc_configuration,
-        video_frame_callback=video_frame_callback,
-        media_stream_constraints={"video": True, "audio": False},
-        async_processing=True,
-    )
-        
-    st.caption("Arahkan kartu ke kamera.")
+    # --- Modifikasi: Bagian Kamera Dihilangkan, Diganti Instruksi Scan ---
+    st.markdown("### 🖱️ Gunakan Alat Scan Barcode")
+    st.info("Arahkan kartu ke *alat scan barcode* Anda. Hasil scan (NISN) akan muncul di kotak di bawah.")
     
     # 3. AREA INPUT MANUAL / HASIL SCAN
     st.markdown("### 👇 INPUT MANUAL / HASIL SCAN")
     
-    # Ambil hasil scan jika ada, atau gunakan nilai dari input manual
+    # Ambil hasil scan jika ada (meskipun webrtc tidak aktif, input manual tetap dapat bekerja)
     nisn_from_scan = st.session_state['nisn_scan'] if st.session_state['nisn_scan'] else ""
     
     with st.container(border=True):
@@ -211,8 +191,8 @@ if menu == "🖥️ Absensi (Scan)":
         mode_absen = st.radio("Pilih Mode:", ["DATANG (Hadir)", "PULANG"], horizontal=True, label_visibility="collapsed")
         st.write("⌨️ MASUKKAN NISN:")
         
-        # Gunakan key yang diupdate untuk me-reset input, dan set default value dari hasil scan
-        nisn_input = st.text_input("Ketik NISN lalu Enter:", value=nisn_from_scan, key=f"scan_main_{st.session_state['scan_main_key']}").strip()
+        # Kolom input ini akan menerima input dari scanner fisik (berfungsi seperti keyboard)
+        nisn_input = st.text_input("Arahkan Scanner ke Barcode Siswa/Ketik NISN lalu Enter:", value=nisn_from_scan, key=f"scan_main_{st.session_state['scan_main_key']}").strip()
 
     if nisn_input:
         df_siswa = pd.read_csv(FILE_SISWA, dtype={'NISN': str})
@@ -224,10 +204,8 @@ if menu == "🖥️ Absensi (Scan)":
             hp_s = siswa.iloc[0]['No_HP']
             ket_fix = "Hadir" if "DATANG" in mode_absen else "Pulang"
             
-            # Load absensi, pastikan kolom NISN dibaca sebagai string
             df_absen = pd.read_csv(FILE_ABSEN, dtype={'NISN': str})
             
-            # Cek apakah sudah absen untuk mode dan hari ini
             sudah_absen = df_absen[
                 (df_absen['Tanggal'] == now.strftime("%Y-%m-%d")) & 
                 (df_absen['NISN'] == nisn_input) & 
@@ -304,7 +282,6 @@ if menu == "🖥️ Absensi (Scan)":
                     kls = data_siswa['Kelas']
                     df_a = pd.read_csv(FILE_ABSEN, dtype={'NISN': str})
                     
-                    # Cek duplikasi
                     sudah_absen_manual = df_a[
                         (df_a['Tanggal'] == now.strftime("%Y-%m-%d")) & 
                         (df_a['NISN'] == nisn_m) & 
@@ -321,7 +298,7 @@ if menu == "🖥️ Absensi (Scan)":
                         
                         # 2. KIRIM KE AIRTABLE (Gunakan 'Class Name')
                         data_airtable = b.copy()
-                        data_airtable['Class Name'] = data_airtable.pop('Kelas') # Ganti 'Kelas' menjadi 'Class Name'
+                        data_airtable['Class Name'] = data_airtable.pop('Kelas')
                         
                         sukses = kirim_ke_airtable(data_airtable)
                         if sukses: st.toast("✅ Tersimpan di Airtable!", icon="☁️")
@@ -338,48 +315,42 @@ elif menu == "📊 Laporan & Persentase":
     col_tgl, col_space = st.columns([1, 2])
     with col_tgl: tgl = st.date_input("Pilih Tanggal Laporan:", datetime.now())
     
-    # Pastikan NISN dibaca sebagai string
     df_a = pd.read_csv(FILE_ABSEN, dtype={'NISN': str})
     df_s = pd.read_csv(FILE_SISWA, dtype={'NISN': str})
     data_harian = df_a[df_a['Tanggal'] == tgl.strftime("%Y-%m-%d")]
     
     if not df_s.empty:
-        # Hitung Total Siswa Per Kelas
         total_siswa = df_s.groupby('Kelas').size().reset_index(name='Total_Siswa')
         
         if not data_harian.empty:
             rekap = data_harian.groupby(['Kelas', 'Keterangan']).size().unstack(fill_value=0).reset_index()
             
-            # Pastikan semua kolom keterangan ada
             for k in ['Hadir', 'Sakit', 'Izin', 'Alpa', 'Pulang']:
                 if k not in rekap.columns: rekap[k] = 0
             
-            # Gabungkan Rekap Absensi dengan Total Siswa
             final = pd.merge(total_siswa, rekap, on='Kelas', how='left').fillna(0)
             
-            # Hitung persentase untuk Hadir, Sakit, Izin, Alpa
-            final['Sakit'] = final['Sakit'] + final['Pulang'] # Pulang dihitung sebagai Hadir/Alpha/Sakit/Izin, anggap Absensi Pulang tidak memengaruhi perhitungan Sakit/Izin/Alpa
-            
+            # Hitung Sakit/Izin/Alpa
+            final['Total_Non_Hadir'] = final['Sakit'] + final['Izin'] + final['Alpa']
+
             # Hitung persentase terhadap Total Siswa
             final['Hadir%'] = (final['Hadir'] / final['Total_Siswa'] * 100).round(1)
             final['Sakit%'] = (final['Sakit'] / final['Total_Siswa'] * 100).round(1)
             final['Izin%'] = (final['Izin'] / final['Total_Siswa'] * 100).round(1)
             final['Alpa%'] = (final['Alpa'] / final['Total_Siswa'] * 100).round(1)
             
-            # Buat kolom tampilan persentase
             final['Ket_Hadir'] = final['Hadir%'].astype(str) + "%"
             final['Ket_Sakit'] = final['Sakit%'].astype(str) + "%"
             final['Ket_Izin'] = final['Izin%'].astype(str) + "%"
             final['Ket_Alpa'] = final['Alpa%'].astype(str) + "%"
             
-            # Ubah tipe data kolom jumlah menjadi integer
             cols_int = ['Total_Siswa', 'Hadir', 'Sakit', 'Izin', 'Alpa', 'Pulang']
             for col in cols_int:
                 if col in final.columns:
                     final[col] = final[col].astype(int)
             
             st.markdown("### 1. Rekapitulasi Per Kelas & Persentase")
-            # Tampilkan data dengan persentase baru
+            
             st.dataframe(
                 final[['Kelas', 'Total_Siswa', 
                        'Hadir', 'Ket_Hadir', 
@@ -391,22 +362,17 @@ elif menu == "📊 Laporan & Persentase":
             )
             
             st.markdown("### 2. Detail Siswa Absen Hari Ini")
-            # Hanya tampilkan data 'Hadir' yang unik NISN dan 'Pulang'
-            # Filter unik berdasarkan NISN dan Keterangan (ambil Hadir/Sakit/Izin/Alpa, abaikan Pulang untuk detail)
-            data_detail = data_harian[data_harian['Keterangan'] != 'Pulang']
             
-            st.dataframe(data_detail[['Jam', 'Nama', 'Kelas', 'Keterangan']], use_container_width=True, hide_index=True)
+            # Tampilkan semua data absensi harian (Hadir, Pulang, Sakit, Izin, Alpa)
+            st.dataframe(data_harian[['Jam', 'Nama', 'Kelas', 'Keterangan']], use_container_width=True, hide_index=True)
             
             st.divider()
             
             # Download Button
             buffer = io.BytesIO()
             with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
-                # Simpan Rekapitulasi Persentase
                 final[['Kelas', 'Total_Siswa', 'Hadir', 'Hadir%', 'Sakit', 'Sakit%', 'Izin', 'Izin%', 'Alpa', 'Alpa%']].to_excel(writer, sheet_name='Rekap_Persentase', index=False)
-                # Simpan Detail Absensi Harian (termasuk Pulang)
                 data_harian.to_excel(writer, sheet_name='Detail_Absensi_Harian', index=False)
-                # Simpan Data Master
                 df_s.to_excel(writer, sheet_name='Data_Siswa_Master', index=False)
                 
             st.download_button("⬇️ DOWNLOAD LAPORAN EXCEL", data=buffer.getvalue(), file_name=f"Laporan_{tgl.strftime('%d-%m-%Y')}.xlsx", mime="application/vnd.ms-excel", type="primary", use_container_width=True)
@@ -433,7 +399,7 @@ elif menu == "📂 Data Master":
                     df = pd.concat([df, pd.DataFrame([new])], ignore_index=True)
                     df.to_csv(FILE_SISWA, index=False)
                     st.success("Tersimpan!")
-                    st.rerun() # Refresh tampilan
+                    st.rerun()
     with tab2:
         df = pd.read_csv(FILE_SISWA, dtype={'NISN': str})
         if not df.empty:
@@ -443,10 +409,9 @@ elif menu == "📂 Data Master":
             data = df[df['NISN'] == nisn_pilih].iloc[0]
             with st.form("edit"):
                 e_nama = st.text_input("Nama", data['Nama'])
-                # Cari index kelas yang sesuai, default ke 0 jika tidak ada
                 kelas_index = DAFTAR_KELAS.index(data['Kelas']) if data['Kelas'] in DAFTAR_KELAS else 0
                 e_kelas = st.selectbox("Kelas", DAFTAR_KELAS, index=kelas_index)
-                e_hp = st.text_input("HP", str(data['No_HP']).replace(".0", "")) # Hilangkan .0 jika ada
+                e_hp = st.text_input("HP", str(data['No_HP']).replace(".0", ""))
                 c_sv, c_del = st.columns(2)
                 if c_sv.form_submit_button("Update Data", type="primary"):
                     df.loc[df['NISN'] == nisn_pilih, ['Nama', 'Kelas', 'No_HP']] = [e_nama, e_kelas, e_hp]
