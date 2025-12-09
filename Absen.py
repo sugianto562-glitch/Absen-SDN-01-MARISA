@@ -224,7 +224,7 @@ with st.sidebar:
 st.markdown("""<div class="footer"><marquee direction="right" scrollamount="6"><span>Sistem Informasi Sekolah Digital — Designed with ❤️ by <b>Sugianto (SDN 01 MARISA)</b></span></marquee></div>""", unsafe_allow_html=True)
 
 
-# --- A. MENU ABSENSI SDN 01MARISA ---
+# --- A. MENU SCAN ABSENSI ---
 if menu == "🖥️ Absensi (Scan)":
     
     # Atur waktu WITA
@@ -232,7 +232,7 @@ if menu == "🖥️ Absensi (Scan)":
     
     # Gunakan st.columns secara hati-hati di HP (rasio 3,1 akan menjadi stacked)
     c1, c2 = st.columns([3,1])
-    c1.title("Scan Absensi")
+    c1.title("ABSEN SDN 01 MARISA")
     c1.markdown(f"#### 📆 {now.strftime('%A, %d %B %Y')}")
     time_placeholder = c2.empty()
     time_placeholder.metric("Jam (WITA)", now.strftime("%H:%M:%S"))
@@ -572,4 +572,5 @@ elif menu == "⚙️ Pengaturan":
                 with open(FILE_SETTINGS, 'w') as f: json.dump(config, f)
                 st.success("Logo berhasil diganti!")
                 st.rerun()
+
 
