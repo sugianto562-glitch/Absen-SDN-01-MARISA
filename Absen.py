@@ -69,13 +69,69 @@ st.set_page_config(page_title="Sistem SDN 01 MARISA", page_icon="🏫", layout="
 
 st.markdown("""
     <style>
-    .stApp, p, h1, h2, h3, h4, label, .stMarkdown, span {color: #000000 !important; text-shadow: none !important;}
-    .stApp { background-color: #f0f2f6; }
-    .footer {position: fixed; left: 0; bottom: 0; width: 100%; background-color: #000000 !important; color: #ffffff !important; text-align: center; padding: 10px; z-index: 999;}
-    .footer p, .footer span { color: #ffffff !important; }
-    .stTextInput input {background-color: #ffffff !important; color: #000000 !important; border: 2px solid #000000 !important; font-weight: bold;}
-    div[role="radiogroup"] {background-color: #ffffff !important; color: #000000 !important; border: 1px solid #000000; padding: 5px; border-radius: 5px;}
-    .stDownloadButton, .stButton>button {background-color: #007bff; color: white !important; border: none; padding: 10px 20px; text-align: center; text-decoration: none; display: inline-block; font-size: 16px; margin: 4px 2px; cursor: pointer; border-radius: 8px;}
+    /* Mengoptimalkan tampilan teks secara umum */
+    .stApp, p, h1, h2, h3, h4, label, .stMarkdown, span {
+        color: #000000 !important; 
+        text-shadow: none !important;
+    }
+    .stApp { 
+        background-color: #f0f2f6; 
+    }
+    
+    /* Perbaikan Footer agar lebih responsif di HP */
+    .footer {
+        position: fixed; 
+        left: 0; 
+        bottom: 0; 
+        width: 100%; 
+        background-color: #000000 !important; 
+        color: #ffffff !important; 
+        text-align: center; 
+        padding: 5px 10px; /* Kurangi padding di HP */
+        z-index: 999;
+    }
+    .footer p, .footer span { 
+        color: #ffffff !important; 
+        font-size: 12px; /* Font lebih kecil di HP */
+    }
+    /* Memastikan marquee berjalan lancar di HP */
+    .footer marquee {
+        display: block;
+        overflow: hidden;
+        white-space: nowrap;
+    }
+
+    /* Memastikan input field terlihat jelas */
+    .stTextInput input {
+        background-color: #ffffff !important; 
+        color: #000000 !important; 
+        border: 2px solid #000000 !important; 
+        font-weight: bold;
+    }
+    
+    /* Mengatur radio button */
+    div[role="radiogroup"] {
+        background-color: #ffffff !important; 
+        color: #000000 !important; 
+        border: 1px solid #000000; 
+        padding: 5px; 
+        border-radius: 5px;
+    }
+    
+    /* Styling tombol */
+    .stDownloadButton, .stButton>button {
+        background-color: #007bff; 
+        color: white !important; 
+        border: none; 
+        padding: 10px 20px; 
+        text-align: center; 
+        text-decoration: none; 
+        display: inline-block; 
+        font-size: 16px; 
+        margin: 4px 2px; 
+        cursor: pointer; 
+        border-radius: 8px;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -148,6 +204,7 @@ if not st.session_state['logged_in']:
 # --- 4. TAMPILAN UTAMA ---
 st.markdown("""<style>.stApp {background-image: none; background-color: #ffffff;}</style>""", unsafe_allow_html=True)
 
+# Pindahkan LOGIC menu ke dalam sidebar
 with st.sidebar:
     logo_file = config.get('logo_path', 'logo_default.png')
     if os.path.exists(logo_file): st.image(logo_file, width=100)
@@ -155,7 +212,10 @@ with st.sidebar:
     st.title(config['nama_sekolah'])
     st.write(config['alamat_sekolah'])
     st.markdown("---")
+    
+    # Simpan pilihan menu ke variabel
     menu = st.radio("MENU UTAMA", ["🖥️ Absensi (Scan)", "📊 Laporan & Persentase", "📂 Data Master", "📸 Upload Foto", "⚙️ Pengaturan"])
+    
     st.markdown("---")
     if st.button("Logout"):
         st.session_state['logged_in'] = False
@@ -163,12 +223,14 @@ with st.sidebar:
 
 st.markdown("""<div class="footer"><marquee direction="right" scrollamount="6"><span>Sistem Informasi Sekolah Digital — Designed with ❤️ by <b>Sugianto (SDN 01 MARISA)</b></span></marquee></div>""", unsafe_allow_html=True)
 
+
 # --- A. MENU SCAN ABSENSI ---
 if menu == "🖥️ Absensi (Scan)":
     
     # Atur waktu WITA
     now = datetime.now() + timedelta(hours=8)
     
+    # Gunakan st.columns secara hati-hati di HP (rasio 3,1 akan menjadi stacked)
     c1, c2 = st.columns([3,1])
     c1.title("Scan Absensi")
     c1.markdown(f"#### 📆 {now.strftime('%A, %d %B %Y')}")
@@ -188,7 +250,8 @@ if menu == "🖥️ Absensi (Scan)":
     
     with st.container(border=True):
         st.write("🔴 STATUS:")
-        mode_absen = st.radio("Pilih Mode:", ["DATANG (Hadir)", "PULANG"], horizontal=True, label_visibility="collapsed")
+        # Ubah horizontal=True menjadi false untuk tampilan vertikal yang lebih baik di HP
+        mode_absen = st.radio("Pilih Mode:", ["DATANG (Hadir)", "PULANG"], horizontal=False, label_visibility="collapsed")
         st.write("⌨️ MASUKKAN NISN:")
         
         # Kolom input ini akan menerima input dari scanner fisik (berfungsi seperti keyboard)
@@ -239,11 +302,12 @@ if menu == "🖥️ Absensi (Scan)":
                     else: st.warning("⚠️ Tersimpan Lokal, Gagal Airtable.")
 
                 # 4. TAMPILKAN HASIL SUKSES
+                # Ubah rasi kolom agar foto tidak terlalu besar/kecil di HP
                 c_foto, c_teks = st.columns([1,3])
                 with c_foto:
                     path_foto = f"{FOLDER_FOTO}/{nisn_input}.jpg"
-                    if os.path.exists(path_foto): st.image(path_foto, width=150)
-                    else: st.image("https://via.placeholder.com/150?text=No+Image", width=150)
+                    if os.path.exists(path_foto): st.image(path_foto, use_column_width=True) # Gunakan use_column_width=True
+                    else: st.image("https://via.placeholder.com/150?text=No+Image", use_column_width=True)
                 with c_teks:
                     st.success(f"✅ SUKSES: {nama_s}")
                     st.markdown(f"{ket_fix} | Pukul: {now.strftime('%H:%M')}")
@@ -267,6 +331,7 @@ if menu == "🖥️ Absensi (Scan)":
         with st.form("manual"):
             df_s = pd.read_csv(FILE_SISWA, dtype={'NISN': str})
             if not df_s.empty: 
+                # Gunakan selectbox yang lebih panjang agar nama tidak terpotong di HP
                 pilih = st.selectbox("Nama Siswa:", df_s['NISN'] + " - " + df_s['Nama'] + " (" + df_s['Kelas'] + ")")
                 nisn_m = pilih.split(" - ")[0]
             else: 
@@ -312,6 +377,7 @@ if menu == "🖥️ Absensi (Scan)":
 # --- B. MENU LAPORAN & PERSENTASE ---
 elif menu == "📊 Laporan & Persentase":
     st.title("📊 Laporan & Download Data")
+    # Di HP, kolom akan di-stacked (vertikal)
     col_tgl, col_space = st.columns([1, 2])
     with col_tgl: tgl = st.date_input("Pilih Tanggal Laporan:", datetime.now())
     
@@ -351,6 +417,7 @@ elif menu == "📊 Laporan & Persentase":
             
             st.markdown("### 1. Rekapitulasi Per Kelas & Persentase")
             
+            # Memastikan DataFrame dapat digulir jika terlalu lebar
             st.dataframe(
                 final[['Kelas', 'Total_Siswa', 
                        'Hadir', 'Ket_Hadir', 
@@ -386,6 +453,7 @@ elif menu == "📂 Data Master":
     tab1, tab2 = st.tabs(["➕ Tambah Data", "✏️ Edit / Hapus"])
     with tab1:
         with st.form("add"):
+            # Kolom akan di-stacked di HP
             c1, c2 = st.columns(2)
             n_nisn = c1.text_input("NISN (Scan/Ketik)").strip()
             n_nama = c2.text_input("Nama")
@@ -404,21 +472,22 @@ elif menu == "📂 Data Master":
         df = pd.read_csv(FILE_SISWA, dtype={'NISN': str})
         if not df.empty:
             list_siswa_dengan_kelas = df['NISN'] + " - " + df['Nama'] + " (" + df['Kelas'] + ")"
+            # Selectbox yang responsif
             pilih = st.selectbox("Cari Siswa:", list_siswa_dengan_kelas)
             nisn_pilih = pilih.split(" - ")[0]
             data = df[df['NISN'] == nisn_pilih].iloc[0]
             
-            # --- MODIFIKASI: Menambahkan kolom untuk Foto dan Form Edit ---
+            # Kolom akan di-stacked di HP, ini baik untuk tata letak
             col_foto, col_edit = st.columns([1, 2])
 
             with col_foto:
                 st.markdown("##### Foto Siswa")
                 path_foto = f"{FOLDER_FOTO}/{nisn_pilih}.jpg"
                 if os.path.exists(path_foto):
-                    st.image(path_foto, width=150)
+                    st.image(path_foto, use_column_width=True)
                 else:
                     st.warning("Foto belum diunggah.")
-                    st.image("https://via.placeholder.com/150?text=No+Image", width=150)
+                    st.image("https://via.placeholder.com/150?text=No+Image", use_column_width=True)
                 
             with col_edit:
                 with st.form("edit"):
@@ -459,10 +528,12 @@ elif menu == "📸 Upload Foto":
             col_kiri, col_kanan = st.columns([1, 2])
             with col_kiri:
                 st.write("Foto Saat Ini:")
-                if os.path.exists(path_now): st.image(path_now, width=150)
+                st.markdown(f"*NISN: {nisn_target}*")
+                if os.path.exists(path_now): st.image(path_now, use_column_width=True)
                 else: st.warning("Belum ada foto")
             with col_kanan:
-                file_foto = st.file_uploader(f"Upload untuk {nama_target}", type=['jpg', 'png', 'jpeg'])
+                st.markdown("<br>", unsafe_allow_html=True) # Jaga jarak agar sejajar
+                file_foto = st.file_uploader(f"Upload foto baru untuk {nama_target}", type=['jpg', 'png', 'jpeg'])
                 if file_foto is not None:
                     if st.button("💾 Simpan Foto", type="primary"):
                         image = Image.open(file_foto).convert('RGB')
