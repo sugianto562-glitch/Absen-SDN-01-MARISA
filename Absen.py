@@ -187,24 +187,22 @@ if menu == "🖥️ Absensi (Scan)":
             
                if not sudah_absen.empty: st.warning(f"⚠️ {nama_s} Sudah absen {ket_fix} hari ini!")
             else:
-                # 1. SIMPAN LOKAL (Gunakan 'Kelas' untuk CSV)
                baru = {'Tanggal': now.strftime("%Y-%m-%d"), 'Jam': now.strftime("%H:%M:%S"), 'NISN': nisn_input, 'Nama': nama_s, 'Kelas': kelas_s, 'Keterangan': ket_fix}
                 df_absen = pd.concat([df_absen, pd.DataFrame([baru])], ignore_index=True)
                 df_absen.to_csv(FILE_ABSEN, index=False)
                                
                 with st.spinner("Mengirim ke Airtable..."):
-                    # 2. KIRIM KE AIRTABLE (Gunakan 'Class Name')
-                    dt_kirim = {
-                        "Tanggal": now.strftime("%Y-%m-%d"), 
-                        "Jam": now.strftime("%H:%M:%S"), 
-                        "NISN": nisn_input, 
-                        "Nama": nama_s, 
-                        "Class Name": kelas_s,  # <-- KUNCI AIRTABLE
-                        "Keterangan": ket_fix
-                    }
-                    sukses = kirim_ke_airtable(dt_kirim)
-                    if sukses: st.toast("✅ Tersimpan di Airtable!", icon="☁️")
-                    else: st.warning("⚠️ Tersimpan Lokal, Gagal Airtable.")
+    dt_kirim = {
+        "Tanggal": now.strftime("%Y-%m-%d"), 
+        "Jam": now.strftime("%H:%M:%S"), 
+        "NISN": nisn_input, 
+        "Nama": nama_s, 
+        "Class Name": kelas_s, # <--- INI KUNCI YANG WAJIB DIGUNAKAN UNTUK AIRTABLE
+        "Keterangan": ket_fix
+    }
+    sukses = kirim_ke_airtable(dt_kirim)
+    if sukses: st.toast("✅ Tersimpan di Airtable!", icon="☁️")
+    else: st.warning("⚠️ Tersimpan Lokal, Gagal Airtable.")
                 baru = {'Tanggal': now.strftime("%Y-%m-%d"), 'Jam': now.strftime("%H:%M:%S"), 'NISN': nisn_input, 'Nama': nama_s,  'Class Name': kelas_s,'Keterangan': ket_fix}
                 df_absen = pd.concat([df_absen, pd.DataFrame([baru])], ignore_index=True)
                 df_absen.to_csv(FILE_ABSEN, index=False)
@@ -388,6 +386,7 @@ elif menu == "⚙️ Pengaturan":
                 with open(FILE_SETTINGS, 'w') as f: json.dump(config, f)
                 st.success("Logo berhasil diganti!")
                 st.rerun()
+
 
 
 
