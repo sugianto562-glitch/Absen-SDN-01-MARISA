@@ -224,7 +224,7 @@ with st.sidebar:
 st.markdown("""<div class="footer"><marquee direction="right" scrollamount="6"><span>Sistem Informasi Sekolah Digital — Designed with ❤️ by <b>Sugianto (SDN 01 MARISA)</b></span></marquee></div>""", unsafe_allow_html=True)
 
 
-# --- A. MENU SCAN ABSENSI ---
+# --- A. MENU ABSENSI SDN 01MARISA ---
 if menu == "🖥️ Absensi (Scan)":
     
     # Atur waktu WITA
@@ -572,3 +572,4 @@ elif menu == "⚙️ Pengaturan":
                 with open(FILE_SETTINGS, 'w') as f: json.dump(config, f)
                 st.success("Logo berhasil diganti!")
                 st.rerun()
+
