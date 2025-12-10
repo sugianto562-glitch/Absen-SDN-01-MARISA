@@ -274,7 +274,7 @@ if menu == "🖥️ Absensi (Scan)":
     
     # Gunakan st.columns secara hati-hati di HP (rasio 3,1 akan menjadi stacked)
     c1, c2 = st.columns([3,1])
-    c1.title("Scan Absensi")
+    c1.title("Absen Digital SDN 01 MARISA")
     c1.markdown(f"#### 📆 {now.strftime('%A, %d %B %Y')}")
     time_placeholder = c2.empty()
     time_placeholder.metric("Jam (WITA)", now.strftime("%H:%M:%S"))
@@ -705,3 +705,4 @@ elif menu == "⚙️ Pengaturan":
                 with open(FILE_SETTINGS, 'w') as f: json.dump(config, f)
                 st.success("Latar belakang berhasil diganti!")
                 st.rerun()
+
