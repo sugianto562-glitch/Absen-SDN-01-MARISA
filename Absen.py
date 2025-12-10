@@ -67,6 +67,7 @@ def video_frame_callback(frame):
 # --- 1. SETTING HALAMAN ---
 st.set_page_config(page_title="Sistem SDN 01 MARISA", page_icon="🏫", layout="wide")
 
+# --- PENTING: Style Dasar CSS (TANPA LOGIKA 'menu') dipindahkan ke atas
 st.markdown("""
     <style>
     /* Mengoptimalkan tampilan teks secara umum */
@@ -74,6 +75,7 @@ st.markdown("""
         color: #000000 !important; 
         text-shadow: none !important;
     }
+    /* Style Dasar untuk background (akan di-override nanti) */
     .stApp { 
         background-color: #f0f2f6; 
     }
@@ -186,6 +188,7 @@ if 'nisn_scan' not in st.session_state: st.session_state['nisn_scan'] = None
 if 'scan_main_key' not in st.session_state: st.session_state['scan_main_key'] = 0 # Key untuk me-reset input NISN
 
 def login_screen():
+    # Style login screen khusus
     st.markdown("""<style>.stApp {background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url("https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=2070"); background-size: cover;}</style>""", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1,2,1])
     with col2:
@@ -206,23 +209,8 @@ if not st.session_state['logged_in']:
     st.stop()
 
 # --- 4. TAMPILAN UTAMA ---
-# Dapatkan path gambar latar belakang yang tersimpan
-bg_image_path = config.get('background_image')
 
-# Tentukan background-style
-if st.session_state['logged_in'] and menu != "🖥️ Absensi (Scan)" and bg_image_path and os.path.exists(bg_image_path):
-    # Gunakan background image jika ada dan bukan di menu scan absensi
-    bg_style = f".stApp {{background-image: linear-gradient(rgba(255,255,255,0.8), rgba(255,255,255,0.8)), url('{bg_image_path}'); background-size: cover; background-attachment: fixed;}}"
-elif st.session_state['logged_in'] and menu != "🖥️ Absensi (Scan)":
-    # Gunakan background-color default jika tidak ada gambar (atau di menu lain selain scan)
-    bg_style = ".stApp {background-image: none; background-color: #f0f2f6;}"
-else:
-    # Ini untuk menu Absensi (Scan) agar background-nya putih polos
-    bg_style = ".stApp {background-image: none; background-color: #ffffff;}"
-    
-st.markdown(f"""<style>{bg_style}</style>""", unsafe_allow_html=True)
-
-# Pindahkan LOGIC menu ke dalam sidebar
+# Pindahkan LOGIC menu ke dalam sidebar (menu DIDEFINISIKAN DI SINI)
 with st.sidebar:
     logo_file = config.get('logo_path', 'logo_default.png')
     if os.path.exists(logo_file): st.image(logo_file, width=100)
@@ -232,13 +220,30 @@ with st.sidebar:
     st.markdown("---")
     
     # Simpan pilihan menu ke variabel
-    # 🌟 TAMBAHKAN MENU BARU DI SINI
     menu = st.radio("MENU UTAMA", ["🖥️ Absensi (Scan)", "📊 Laporan & Persentase", "📂 Data Master", "📸 Upload Foto", "🔗 Link WA Wali Murid", "⚙️ Pengaturan"])
     
     st.markdown("---")
     if st.button("Logout"):
         st.session_state['logged_in'] = False
         st.rerun()
+
+# ⚠️ PERBAIKAN: LOGIKA BACKGROUND DIPINDAHKAN KE SINI (Setelah 'menu' terdefinisi)
+bg_image_path = config.get('background_image')
+
+if st.session_state['logged_in']:
+    if menu == "🖥️ Absensi (Scan)":
+        # Untuk menu scan, gunakan background putih polos
+        bg_style = ".stApp {background-image: none; background-color: #ffffff;}"
+    elif bg_image_path and os.path.exists(bg_image_path):
+        # Gunakan background image jika ada dan bukan di menu scan
+        bg_style = f".stApp {{background-image: linear-gradient(rgba(255,255,255,0.8), rgba(255,255,255,0.8)), url('{bg_image_path}'); background-size: cover; background-attachment: fixed;}}"
+    else:
+        # Gunakan background-color default jika tidak ada gambar
+        bg_style = ".stApp {background-image: none; background-color: #f0f2f6;}"
+    
+    # Terapkan CSS background
+    st.markdown(f"""<style>{bg_style}</style>""", unsafe_allow_html=True)
+# -------------------------------------------------------------
 
 st.markdown("""<div class="footer"><marquee direction="right" scrollamount="6"><span>Sistem Informasi Sekolah Digital — Designed with ❤️ by <b>Sugianto (SDN 01 MARISA)</b></span></marquee></div>""", unsafe_allow_html=True)
 
