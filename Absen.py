@@ -252,12 +252,13 @@ with st.sidebar:
 
 # LOGIKA BACKGROUND DENGAN BASE64
 if st.session_state['logged_in']:
-    if menu == "🖥️ Absensi (Scan)":
-        bg_style = ".stApp {background-image: none; background-color: #ffffff;}"
-    elif bg_base64_url:
-        # Menggunakan Base64 URL untuk background
+    
+    # --- PERUBAHAN DI SINI: Hapus pengecualian menu Absensi ---
+    if bg_base64_url:
+        # Terapkan gambar background dengan opacity (transparan) ke semua menu
         bg_style = f".stApp {{background-image: linear-gradient(rgba(255,255,255,0.8), rgba(255,255,255,0.8)), url('{bg_base64_url}'); background-size: cover; background-attachment: fixed;}}"
     else:
+        # Default jika tidak ada gambar background
         bg_style = ".stApp {background-image: none; background-color: #f0f2f6;}"
     
     st.markdown(f"""<style>{bg_style}</style>""", unsafe_allow_html=True)
@@ -274,7 +275,7 @@ if menu == "🖥️ Absensi (Scan)":
     
     # Gunakan st.columns secara hati-hati di HP (rasio 3,1 akan menjadi stacked)
     c1, c2 = st.columns([3,1])
-    c1.title("ABSEN DIGITAL SDN 01 MARISA")
+    c1.title("Scan Absensi")
     c1.markdown(f"#### 📆 {now.strftime('%A, %d %B %Y')}")
     time_placeholder = c2.empty()
     time_placeholder.metric("Jam (WITA)", now.strftime("%H:%M:%S"))
@@ -705,5 +706,3 @@ elif menu == "⚙️ Pengaturan":
                 with open(FILE_SETTINGS, 'w') as f: json.dump(config, f)
                 st.success("Latar belakang berhasil diganti!")
                 st.rerun()
-
-
