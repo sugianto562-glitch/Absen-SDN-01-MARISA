@@ -603,22 +603,26 @@ elif menu == "🔗 Link WA Wali Murid":
             def generate_wa_link_button(row):
                 nomor = row['No_HP']
                 # Cek apakah nomor valid (dianggap valid jika lebih dari 8 karakter setelah dibersihkan)
-                if len(str(nomor).replace(" ", "")) > 8:
+                if len(str(nommor).replace(" ", "")) > 8:
                     # Tambahkan nama siswa ke pesan (opsional, untuk personalisasi)
                     pesan_personalized = f"Kepada Wali dari ananda {row['Nama']} ({row['Kelas']}),\n\n{pesan_input}"
                     link = buat_link_wa(nomor, pesan_personalized)
                     if link:
+                        # Menggunakan format Markdown untuk menampilkan link di DataFrame
                         return f"[📲 Kirim WA](<{link}>)"
                 return "❌ No HP Invalid/Kosong"
 
             data_tampil['Link WA'] = data_tampil.apply(generate_wa_link_button, axis=1)
 
+            # --- KODE PERBAIKAN: Menghapus column_config ---
             st.dataframe(
                 data_tampil[['Nama', 'Kelas', 'No_HP', 'Link WA']],
-                column_config={"Link WA": st.column_config.MarkdownColumn("Link Kirim Pesan")},
+                # column_config={"Link WA": st.column_config.MarkdownColumn("Link Kirim Pesan")}, # BARIS INI DIHAPUS
                 hide_index=True,
                 use_container_width=True
             )
+            # -----------------------------------------------
+
         else:
             st.info(f"Tidak ada siswa ditemukan di kelas {kelas_pilih}.")
 
