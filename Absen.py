@@ -210,6 +210,9 @@ if not st.session_state['logged_in']:
 
 # --- 4. TAMPILAN UTAMA ---
 
+# 💡 PERBAIKAN: Definisikan bg_image_path sebelum digunakan di blok CSS di bawah.
+bg_image_path = config.get('background_image')
+
 # Pindahkan LOGIC menu ke dalam sidebar (menu DIDEFINISIKAN DI SINI)
 with st.sidebar:
     logo_file = config.get('logo_path', 'logo_default.png')
@@ -228,7 +231,6 @@ with st.sidebar:
         st.rerun()
 
 # ⚠️ PERBAIKAN: LOGIKA BACKGROUND DIPINDAHKAN KE SINI (Setelah 'menu' terdefinisi)
-bg_image_path = config.get('background_image')
 
 if st.session_state['logged_in']:
     if menu == "🖥️ Absensi (Scan)":
@@ -603,7 +605,8 @@ elif menu == "🔗 Link WA Wali Murid":
             def generate_wa_link_button(row):
                 nomor = row['No_HP']
                 # Cek apakah nomor valid (dianggap valid jika lebih dari 8 karakter setelah dibersihkan)
-                if len(str(nommor).replace(" ", "")) > 8:
+                # 💡 PERBAIKAN: Mengganti 'nommor' menjadi 'nomor'
+                if len(str(nomor).replace(" ", "")) > 8:
                     # Tambahkan nama siswa ke pesan (opsional, untuk personalisasi)
                     pesan_personalized = f"Kepada Wali dari ananda {row['Nama']} ({row['Kelas']}),\n\n{pesan_input}"
                     link = buat_link_wa(nomor, pesan_personalized)
@@ -614,14 +617,13 @@ elif menu == "🔗 Link WA Wali Murid":
 
             data_tampil['Link WA'] = data_tampil.apply(generate_wa_link_button, axis=1)
 
-            # --- KODE PERBAIKAN: Menghapus column_config ---
+            # ⚠️ PERBAIKAN: Menghapus column_config yang menyebabkan AttributeError
             st.dataframe(
                 data_tampil[['Nama', 'Kelas', 'No_HP', 'Link WA']],
                 # column_config={"Link WA": st.column_config.MarkdownColumn("Link Kirim Pesan")}, # BARIS INI DIHAPUS
                 hide_index=True,
                 use_container_width=True
             )
-            # -----------------------------------------------
 
         else:
             st.info(f"Tidak ada siswa ditemukan di kelas {kelas_pilih}.")
