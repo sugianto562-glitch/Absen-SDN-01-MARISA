@@ -162,10 +162,11 @@ init_csv(FILE_SISWA, ['NISN', 'Nama', 'Kelas', 'No_HP'])
 
 def load_settings():
     """Memuat atau membuat pengaturan sekolah."""
-    defaults = {"nama_sekolah": "SDN 01 MARISA", "alamat_sekolah": "Jl. Pendidikan, Marisa", "logo_path": "logo_default.png"}
+    # Menggunakan dict.get() untuk keamanan jika settings.json belum ada background_image
+    defaults = {"nama_sekolah": "SDN 01 MARISA", "alamat_sekolah": "Jl. Pendidikan, Marisa", "logo_path": "logo_default.png", "background_image": None}
     if not os.path.exists(FILE_SETTINGS): return defaults
     try:
-        with open(FILE_SETTINGS, 'r') as f: return json.load(f)
+        with open(FILE_SETTINGS, 'r') as f: return {**defaults, **json.load(f)}
     except: return defaults
 
 config = load_settings()
@@ -174,7 +175,10 @@ def buat_link_wa(nomor, pesan):
     """Membuat tautan WhatsApp."""
     nomor = str(nomor).strip().replace(".0", "").replace("-", "").replace(" ", "").replace("+", "")
     if nomor.startswith("0"): nomor = "62" + nomor[1:]
-    return f"https://api.whatsapp.com/send?phone={nomor}&text={urllib.parse.quote(pesan)}"
+    # Cek apakah nomor valid sebelum membuat link
+    if len(nomor) > 8:
+        return f"https://api.whatsapp.com/send?phone={nomor}&text={urllib.parse.quote(pesan)}"
+    return None # Kembalikan None jika nomor tidak valid
 
 # --- 3. LOGIC LOGIN ---
 if 'logged_in' not in st.session_state: st.session_state['logged_in'] = False
@@ -202,7 +206,21 @@ if not st.session_state['logged_in']:
     st.stop()
 
 # --- 4. TAMPILAN UTAMA ---
-st.markdown("""<style>.stApp {background-image: none; background-color: #ffffff;}</style>""", unsafe_allow_html=True)
+# Dapatkan path gambar latar belakang yang tersimpan
+bg_image_path = config.get('background_image')
+
+# Tentukan background-style
+if st.session_state['logged_in'] and menu != "🖥️ Absensi (Scan)" and bg_image_path and os.path.exists(bg_image_path):
+    # Gunakan background image jika ada dan bukan di menu scan absensi
+    bg_style = f".stApp {{background-image: linear-gradient(rgba(255,255,255,0.8), rgba(255,255,255,0.8)), url('{bg_image_path}'); background-size: cover; background-attachment: fixed;}}"
+elif st.session_state['logged_in'] and menu != "🖥️ Absensi (Scan)":
+    # Gunakan background-color default jika tidak ada gambar (atau di menu lain selain scan)
+    bg_style = ".stApp {background-image: none; background-color: #f0f2f6;}"
+else:
+    # Ini untuk menu Absensi (Scan) agar background-nya putih polos
+    bg_style = ".stApp {background-image: none; background-color: #ffffff;}"
+    
+st.markdown(f"""<style>{bg_style}</style>""", unsafe_allow_html=True)
 
 # Pindahkan LOGIC menu ke dalam sidebar
 with st.sidebar:
@@ -214,7 +232,8 @@ with st.sidebar:
     st.markdown("---")
     
     # Simpan pilihan menu ke variabel
-    menu = st.radio("MENU UTAMA", ["🖥️ Absensi (Scan)", "📊 Laporan & Persentase", "📂 Data Master", "📸 Upload Foto", "⚙️ Pengaturan"])
+    # 🌟 TAMBAHKAN MENU BARU DI SINI
+    menu = st.radio("MENU UTAMA", ["🖥️ Absensi (Scan)", "📊 Laporan & Persentase", "📂 Data Master", "📸 Upload Foto", "🔗 Link WA Wali Murid", "⚙️ Pengaturan"])
     
     st.markdown("---")
     if st.button("Logout"):
@@ -232,7 +251,7 @@ if menu == "🖥️ Absensi (Scan)":
     
     # Gunakan st.columns secara hati-hati di HP (rasio 3,1 akan menjadi stacked)
     c1, c2 = st.columns([3,1])
-    c1.title("ABSEN SDN 01 MARISA")
+    c1.title("Scan Absensi")
     c1.markdown(f"#### 📆 {now.strftime('%A, %d %B %Y')}")
     time_placeholder = c2.empty()
     time_placeholder.metric("Jam (WITA)", now.strftime("%H:%M:%S"))
@@ -312,8 +331,9 @@ if menu == "🖥️ Absensi (Scan)":
                     st.success(f"✅ SUKSES: {nama_s}")
                     st.markdown(f"{ket_fix} | Pukul: {now.strftime('%H:%M')}")
                     pesan = f"Assalamualaikum. Siswa a.n {nama_s} ({kelas_s}) telah {ket_fix.upper()} pada pukul {now.strftime('%H:%M')}."
-                    if str(hp_s) != "nan" and len(str(hp_s)) > 5: 
-                        st.link_button("📲 KIRIM WA", buat_link_wa(hp_s, pesan))
+                    link_wa = buat_link_wa(hp_s, pesan)
+                    if link_wa: 
+                        st.link_button("📲 KIRIM WA", link_wa)
 
             # Reset hasil scan di session state dan update key agar input manual reset
             st.session_state['nisn_scan'] = None
@@ -543,10 +563,68 @@ elif menu == "📸 Upload Foto":
                         st.rerun()
     else: st.warning("Data Master Kosong.")
 
+# --- F. MENU LINK WA WALI MURID (MENU BARU) ---
+elif menu == "🔗 Link WA Wali Murid":
+    st.title("🔗 Kirim Pesan WA ke Wali Murid")
+    st.info("Fitur ini membantu Anda mengirimkan pesan WhatsApp (WA) kepada wali murid per kelas secara cepat (satu per satu).")
+
+    df_s = pd.read_csv(FILE_SISWA, dtype={'NISN': str})
+    
+    if df_s.empty:
+        st.warning("Data Master Siswa kosong. Silakan isi Data Master terlebih dahulu.")
+    else:
+        # 1. Pilih Kelas
+        kelas_pilih = st.selectbox("Pilih Kelas:", ["-- Pilih Semua --"] + sorted(df_s['Kelas'].unique().tolist()))
+        
+        if kelas_pilih != "-- Pilih Semua --":
+            df_filter = df_s[df_s['Kelas'] == kelas_pilih].copy()
+            st.markdown(f"### Daftar Siswa Kelas {kelas_pilih}")
+        else:
+            df_filter = df_s.copy()
+            st.markdown("### Daftar Seluruh Siswa")
+
+        # 2. Input Pesan
+        st.markdown("---")
+        pesan_default = f"Assalamualaikum, Bapak/Ibu Wali Murid.\nKami dari {config['nama_sekolah']} ingin menyampaikan informasi: ...."
+        pesan_input = st.text_area("Tulis Pesan yang Akan Dikirim:", value=pesan_default, height=150)
+
+        # 3. Tampilkan Daftar Siswa dengan Link WA
+        if not df_filter.empty:
+            
+            data_tampil = df_filter[['Nama', 'Kelas', 'No_HP']].copy()
+            data_tampil['No_HP'] = data_tampil['No_HP'].apply(lambda x: str(x).replace(".0", "").strip() if pd.notna(x) else "")
+            
+            # Buat kolom link WA
+            def generate_wa_link_button(row):
+                nomor = row['No_HP']
+                # Cek apakah nomor valid (dianggap valid jika lebih dari 8 karakter setelah dibersihkan)
+                if len(str(nomor).replace(" ", "")) > 8:
+                    # Tambahkan nama siswa ke pesan (opsional, untuk personalisasi)
+                    pesan_personalized = f"Kepada Wali dari ananda {row['Nama']} ({row['Kelas']}),\n\n{pesan_input}"
+                    link = buat_link_wa(nomor, pesan_personalized)
+                    if link:
+                        return f"[📲 Kirim WA](<{link}>)"
+                return "❌ No HP Invalid/Kosong"
+
+            data_tampil['Link WA'] = data_tampil.apply(generate_wa_link_button, axis=1)
+
+            st.dataframe(
+                data_tampil[['Nama', 'Kelas', 'No_HP', 'Link WA']],
+                column_config={"Link WA": st.column_config.MarkdownColumn("Link Kirim Pesan")},
+                hide_index=True,
+                use_container_width=True
+            )
+        else:
+            st.info(f"Tidak ada siswa ditemukan di kelas {kelas_pilih}.")
+
+
 # --- E. MENU PENGATURAN ---
 elif menu == "⚙️ Pengaturan":
     st.title("Pengaturan Sekolah")
-    col_set1, col_set2 = st.columns(2)
+    
+    # Pisahkan ke 3 kolom untuk identitas, logo, dan background
+    col_set1, col_set2, col_set3 = st.columns(3)
+    
     with col_set1:
         st.markdown("### Identitas Sekolah")
         with st.form("setting_sekolah"):
@@ -558,13 +636,14 @@ elif menu == "⚙️ Pengaturan":
                 with open(FILE_SETTINGS, 'w') as f: json.dump(config, f)
                 st.success("Identitas tersimpan!")
                 st.rerun()
+
     with col_set2:
         st.markdown("### Logo Sekolah")
         curr_logo = config.get('logo_path', '')
         if curr_logo and os.path.exists(curr_logo): st.image(curr_logo, width=100)
-        up_logo = st.file_uploader("Ganti Logo (PNG/JPG)", type=['png', 'jpg', 'jpeg'])
+        up_logo = st.file_uploader("Ganti Logo (PNG/JPG)", type=['png', 'jpg', 'jpeg'], key="up_logo")
         if up_logo is not None:
-            if st.button("Upload & Ganti Logo", type="primary"):
+            if st.button("Upload & Ganti Logo", type="primary", key="btn_logo"):
                 img = Image.open(up_logo)
                 target_logo = "logo_sekolah.png"
                 img.save(target_logo)
@@ -572,5 +651,28 @@ elif menu == "⚙️ Pengaturan":
                 with open(FILE_SETTINGS, 'w') as f: json.dump(config, f)
                 st.success("Logo berhasil diganti!")
                 st.rerun()
+    
+    with col_set3:
+        # Menambahkan fitur Pengaturan Background
+        st.markdown("### Latar Belakang")
+        path_bg = config.get('background_image')
+        if path_bg and os.path.exists(path_bg):
+            st.write("Latar Belakang Saat Ini:")
+            st.image(path_bg, use_column_width=True)
+        else:
+            st.info("Belum ada gambar latar belakang.")
 
+        up_bg = st.file_uploader("Ganti Latar Belakang (JPG/PNG)", type=['jpg', 'png', 'jpeg'], key="up_bg")
 
+        if up_bg is not None:
+            if st.button("Upload & Terapkan Latar Belakang", type="primary", key="btn_bg"):
+                img = Image.open(up_bg).convert('RGB')
+                target_bg = "background_img.jpg" # Simpan dengan nama file tetap
+                # Resize gambar agar tidak terlalu besar (opsional, untuk performa)
+                img.thumbnail((1000, 1000)) 
+                img.save(target_bg)
+                
+                config['background_image'] = target_bg
+                with open(FILE_SETTINGS, 'w') as f: json.dump(config, f)
+                st.success("Latar belakang berhasil diganti!")
+                st.rerun()
